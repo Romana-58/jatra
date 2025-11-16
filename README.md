@@ -1,28 +1,76 @@
-# JatraRailway
+# Jatra - Scalable Railway Ticketing System
 
-<a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
+A Kubernetes-based microservices architecture for Bangladesh Railway's online ticketing system, designed to handle extreme traffic loads (30M+ hits in 30 minutes) during peak seasons like Eid.
 
-✨ Your new, shiny [Nx workspace](https://nx.dev) is ready ✨.
+## 🚀 Project Overview
 
-Run `npx nx graph` to visually explore what got created. Now, let's get you up to speed!
+**Problem:** Bangladesh Railway's e-ticketing system crashes during Eid with 1,187+ concurrent attempts per seat, leading to failed bookings and poor user experience.
 
-## Run tasks
+**Solution:** A fault-tolerant, horizontally scalable microservices system with 11 microservices, atomic seat reservation, SSLCommerz payment, SMS notifications, QR code tickets, and comprehensive observability.
 
-To run tasks with Nx use:
+## 📁 Project Structure
 
-```sh
-npx nx <target> <project-name>
+```
+jatra-railway/
+├── apps/                  # Client applications (web, admin)
+├── services/              # Backend microservices (11 services)
+├── libs/                  # Shared libraries (common, database, messaging, etc.)
+├── infra/                 # Infrastructure as Code (K8s, Pulumi, Docker)
+├── scripts/               # Automation scripts
+├── tests/                 # E2E, integration, and load tests
+└── docs/                  # Documentation
 ```
 
-For example:
+## 🛠️ Technology Stack
 
-```sh
-npx nx build myproject
+- **Backend:** NestJS (TypeScript), Go (API Gateway)
+- **Frontend:** Next.js 14+ (TypeScript)
+- **Databases:** PostgreSQL 15+, Redis 7+ Cluster
+- **Message Queue:** RabbitMQ
+- **Payment:** SSLCommerz
+- **Orchestration:** Kubernetes + Helm
+- **CI/CD:** Jenkins
+- **IaC:** Pulumi
+- **Monitoring:** Prometheus + Grafana + OpenTelemetry
+
+## 🚦 Getting Started
+
+### Prerequisites
+- Node.js 20+
+- pnpm 8+
+- Docker & Docker Compose
+- Go 1.21+ (for API Gateway)
+
+### Installation
+
+```bash
+# Install dependencies
+pnpm install
+
+# Start infrastructure services
+docker-compose up -d
+
+# Start a service
+pnpm nx serve <service-name>
 ```
 
-These targets are either [inferred automatically](https://nx.dev/concepts/inferred-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or defined in the `project.json` or `package.json` files.
+## 📦 Nx Commands
 
-[More about running tasks in the docs &raquo;](https://nx.dev/features/run-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+```bash
+# Run a service
+pnpm nx serve <service-name>
+
+# Test
+pnpm nx test <service-name>
+pnpm nx affected:test
+
+# Build
+pnpm nx build <service-name>
+pnpm nx affected:build
+
+# View dependency graph
+pnpm nx graph
+```
 
 ## Add new projects
 
