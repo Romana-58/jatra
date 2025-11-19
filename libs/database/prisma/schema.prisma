@@ -1,0 +1,46 @@
+// This is your Prisma schema file for Jatra Railway
+// Learn more: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(uuid())
+  nid           String         @unique @db.VarChar(13) // National ID (10 or 13 digits)
+  email         String         @unique @db.VarChar(255)
+  phone         String         @unique @db.VarChar(20) // BD format: +880 or 01...
+  passwordHash  String         @db.VarChar(255)
+  name          String         @db.VarChar(255)
+  role          Role           @default(USER)
+  emailVerified Boolean        @default(false)
+  phoneVerified Boolean        @default(false)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique @db.VarChar(500)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
