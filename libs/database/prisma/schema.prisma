@@ -43,3 +43,159 @@ enum Role {
   USER
   ADMIN
 }
+
+// Schedule Service Models
+model Station {
+  id        String   @id @default(uuid())
+  code      String   @unique @db.VarChar(10) // e.g., DHK, CTG, SYL
+  name      String   @db.VarChar(255)
+  city      String   @db.VarChar(100)
+  district  String   @db.VarChar(100)
+  latitude  Float?
+  longitude Float?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  routeStopsFrom RouteStop[] @relation("FromStation")
+  routeStopsTo   RouteStop[] @relation("ToStation")
+
+  @@index([code])
+  @@index([city])
+  @@map("stations")
+}
+
+model Train {
+  id          String    @id @default(uuid())
+  trainNumber String    @unique @db.VarChar(20) // e.g., SUBORNO-EXPRESS-701
+  name        String    @db.VarChar(255) // e.g., Suborno Express
+  type        TrainType @default(INTERCITY)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  coaches  Coach[]
+  journeys Journey[]
+
+  @@index([trainNumber])
+  @@map("trains")
+}
+
+model Coach {
+  id         String     @id @default(uuid())
+  trainId    String
+  train      Train      @relation(fields: [trainId], references: [id], onDelete: Cascade)
+  coachCode  String     @db.VarChar(20) // e.g., KA, KHA, GA
+  coachType  CoachType
+  totalSeats Int
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  seats Seat[]
+
+  @@unique([trainId, coachCode])
+  @@index([trainId])
+  @@map("coaches")
+}
+
+model Seat {
+  id         String   @id @default(uuid())
+  coachId    String
+  coach      Coach    @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  seatNumber String   @db.VarChar(10) // e.g., A1, B2
+  seatType   SeatType
+  baseFare   Float    @db.DoublePrecision
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([coachId, seatNumber])
+  @@index([coachId])
+  @@map("seats")
+}
+
+model Route {
+  id            String   @id @default(uuid())
+  routeName     String   @db.VarChar(255) // e.g., "Dhaka-Chittagong"
+  totalDistance Float    @db.DoublePrecision // in kilometers
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  stops    RouteStop[]
+  journeys Journey[]
+
+  @@map("routes")
+}
+
+model RouteStop {
+  id                String   @id @default(uuid())
+  routeId           String
+  route             Route    @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  fromStationId     String
+  fromStation       Station  @relation("FromStation", fields: [fromStationId], references: [id])
+  toStationId       String
+  toStation         Station  @relation("ToStation", fields: [toStationId], references: [id])
+  stopOrder         Int // Order of this stop in the route
+  distanceFromStart Float    @db.DoublePrecision // Distance from first station
+  durationMinutes   Int // Estimated travel time from previous stop
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([routeId, stopOrder])
+  @@index([routeId])
+  @@index([fromStationId])
+  @@index([toStationId])
+  @@map("route_stops")
+}
+
+model Journey {
+  id               String        @id @default(uuid())
+  trainId          String
+  train            Train         @relation(fields: [trainId], references: [id])
+  routeId          String
+  route            Route         @relation(fields: [routeId], references: [id])
+  departureTime    DateTime
+  arrivalTime      DateTime
+  journeyDate      DateTime      @db.Date
+  status           JourneyStatus @default(SCHEDULED)
+  availableSeats   Int
+  totalSeats       Int
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  @@index([trainId])
+  @@index([routeId])
+  @@index([journeyDate])
+  @@index([departureTime])
+  @@map("journeys")
+}
+
+enum TrainType {
+  INTERCITY
+  MAIL_EXPRESS
+  COMMUTER
+  LOCAL
+}
+
+enum CoachType {
+  AC_BERTH
+  AC_SEAT
+  AC_CHAIR
+  SNIGDHA
+  SHOVAN
+  SHOVAN_CHAIR
+}
+
+enum SeatType {
+  BERTH_LOWER
+  BERTH_UPPER
+  SEAT
+  CHAIR
+}
+
+enum JourneyStatus {
+  SCHEDULED
+  DELAYED
+  CANCELLED
+  COMPLETED
+}
