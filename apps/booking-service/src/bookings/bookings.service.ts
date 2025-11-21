@@ -1,0 +1,465 @@
+import { Injectable, Logger, BadRequestException, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import { HttpService } from '@nestjs/axios';
+import { PrismaService } from '../common/prisma.service';
+import { RabbitMQService } from '../common/rabbitmq.service';
+import { CreateBookingDto } from './dto/create-booking.dto';
+import { ConfirmBookingDto } from './dto/confirm-booking.dto';
+import { CancelBookingDto } from './dto/cancel-booking.dto';
+import { QueryBookingsDto } from './dto/query-bookings.dto';
+import { firstValueFrom } from 'rxjs';
+
+@Injectable()
+export class BookingsService {
+  private readonly logger = new Logger(BookingsService.name);
+  private readonly seatReservationUrl = process.env.SEAT_RESERVATION_SERVICE_URL || 'http://localhost:3003';
+  private readonly paymentUrl = process.env.PAYMENT_SERVICE_URL || 'http://localhost:3004';
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly httpService: HttpService,
+    private readonly rabbitMQ: RabbitMQService,
+  ) {}
+
+  /**
+   * Create booking - Orchestrates seat locking and payment initiation
+   */
+  async createBooking(dto: CreateBookingDto) {
+    this.logger.log(`Creating booking for user ${dto.userId}`);
+
+    let reservationId: string;
+    let paymentId: string;
+
+    try {
+      // Step 1: Lock seats in reservation service
+      const lockResponse = await firstValueFrom(
+        this.httpService.post(`${this.seatReservationUrl}/locks/acquire`, {
+          userId: dto.userId,
+          journeyId: dto.journeyId,
+          seatIds: dto.seatIds,
+          fromStationId: dto.fromStationId,
+          toStationId: dto.toStationId,
+        })
+      );
+
+      reservationId = lockResponse.data.lockId || lockResponse.data.id;
+      this.logger.log(`✅ Seats locked: ${reservationId}`);
+
+      // Step 2: Initiate payment
+      const paymentResponse = await firstValueFrom(
+        this.httpService.post(`${this.paymentUrl}/payments/initiate`, {
+          userId: dto.userId,
+          reservationId,
+          amount: dto.totalAmount,
+          paymentMethod: dto.paymentMethod,
+          ...dto.paymentDetails,
+        })
+      );
+
+      paymentId = paymentResponse.data.id;
+      this.logger.log(`✅ Payment initiated: ${paymentId}`);
+
+      // Step 3: Create booking record
+      const booking = await this.prisma.booking.create({
+        data: {
+          userId: dto.userId,
+          journeyId: dto.journeyId,
+          reservationId,
+          paymentId,
+          totalAmount: dto.totalAmount,
+          status: 'PAYMENT_PENDING',
+          seats: {
+            create: dto.seatIds.map(seatId => ({ seatId })),
+          },
+        },
+        include: {
+          seats: true,
+          journey: {
+            include: {
+              train: true,
+              route: {
+                include: {
+                  stops: {
+                    include: {
+                      station: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          reservation: true,
+          payment: true,
+        },
+      });
+
+      this.logger.log(`✅ Booking created: ${booking.id}`);
+
+      return {
+        id: booking.id,
+        status: booking.status,
+        reservationId,
+        paymentId,
+        totalAmount: booking.totalAmount,
+        seats: booking.seats,
+        journey: booking.journey,
+        payment: booking.payment,
+        message: 'Booking created successfully. Please complete payment.',
+      };
+    } catch (error) {
+      this.logger.error('❌ Booking creation failed', error.message);
+
+      // Rollback: Release seats if payment initiation failed
+      if (reservationId && !paymentId) {
+        try {
+          await firstValueFrom(
+            this.httpService.post(`${this.seatReservationUrl}/locks/release`, {
+              lockId: reservationId,
+              userId: dto.userId,
+            })
+          );
+          this.logger.log('🔄 Seats released after payment failure');
+        } catch (releaseError) {
+          this.logger.error('Failed to release seats', releaseError.message);
+        }
+      }
+
+      throw new InternalServerErrorException(
+        error.response?.data?.message || 'Failed to create booking'
+      );
+    }
+  }
+
+  /**
+   * Confirm booking after successful payment
+   */
+  async confirmBooking(bookingId: string, dto: ConfirmBookingDto) {
+    this.logger.log(`Confirming booking ${bookingId}`);
+
+    const booking = await this.prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: {
+        reservation: true,
+        payment: true,
+        user: true,
+        journey: true,
+      },
+    });
+
+    if (!booking) {
+      throw new NotFoundException('Booking not found');
+    }
+
+    if (booking.status === 'CONFIRMED') {
+      throw new BadRequestException('Booking already confirmed');
+    }
+
+    if (booking.status === 'CANCELLED') {
+      throw new BadRequestException('Cannot confirm cancelled booking');
+    }
+
+    try {
+      // Step 1: Confirm payment in payment service
+      await firstValueFrom(
+        this.httpService.post(`${this.paymentUrl}/payments/confirm`, {
+          paymentId: dto.paymentId,
+          transactionId: dto.transactionId,
+        })
+      );
+
+      // Step 2: Confirm reservation
+      await firstValueFrom(
+        this.httpService.post(`${this.seatReservationUrl}/reservations/confirm`, {
+          lockId: booking.reservationId,
+          userId: booking.userId,
+        })
+      );
+
+      // Step 3: Update booking status
+      const confirmedBooking = await this.prisma.booking.update({
+        where: { id: bookingId },
+        data: { status: 'CONFIRMED' },
+        include: {
+          seats: {
+            include: {
+              seat: true,
+            },
+          },
+          journey: {
+            include: {
+              train: true,
+              route: {
+                include: {
+                  stops: {
+                    include: {
+                      station: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          payment: true,
+          reservation: true,
+        },
+      });
+
+      // Step 4: Emit event for notification service
+      await this.rabbitMQ.publishBookingEvent({
+        type: 'BOOKING_CONFIRMED',
+        bookingId: confirmedBooking.id,
+        userId: confirmedBooking.userId,
+        data: {
+          journey: confirmedBooking.journey,
+          seats: confirmedBooking.seats,
+          totalAmount: confirmedBooking.totalAmount,
+        },
+        timestamp: new Date(),
+      });
+
+      this.logger.log(`✅ Booking confirmed: ${bookingId}`);
+
+      return confirmedBooking;
+    } catch (error) {
+      this.logger.error('❌ Booking confirmation failed', error.message);
+      throw new InternalServerErrorException(
+        error.response?.data?.message || 'Failed to confirm booking'
+      );
+    }
+  }
+
+  /**
+   * Get booking by ID
+   */
+  async getBooking(bookingId: string) {
+    const booking = await this.prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: {
+        seats: {
+          include: {
+            seat: {
+              include: {
+                coach: true,
+              },
+            },
+          },
+        },
+        journey: {
+          include: {
+            train: true,
+            route: {
+              include: {
+                stops: {
+                  include: {
+                    station: true,
+                  },
+                  orderBy: {
+                    stopNumber: 'asc',
+                  },
+                },
+              },
+            },
+          },
+        },
+        reservation: true,
+        payment: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+          },
+        },
+      },
+    });
+
+    if (!booking) {
+      throw new NotFoundException('Booking not found');
+    }
+
+    return booking;
+  }
+
+  /**
+   * Get user's bookings with filters
+   */
+  async getUserBookings(userId: string, query: QueryBookingsDto) {
+    const page = parseInt(query.page) || 1;
+    const limit = parseInt(query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const where: any = { userId };
+
+    if (query.status) {
+      where.status = query.status;
+    }
+
+    const [bookings, total] = await Promise.all([
+      this.prisma.booking.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: {
+          [query.sortBy || 'createdAt']: query.sortOrder || 'desc',
+        },
+        include: {
+          seats: {
+            include: {
+              seat: {
+                include: {
+                  coach: true,
+                },
+              },
+            },
+          },
+          journey: {
+            include: {
+              train: true,
+              route: {
+                include: {
+                  stops: {
+                    include: {
+                      station: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          payment: true,
+        },
+      }),
+      this.prisma.booking.count({ where }),
+    ]);
+
+    return {
+      data: bookings,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
+   * Cancel booking and process refund
+   */
+  async cancelBooking(bookingId: string, dto: CancelBookingDto) {
+    this.logger.log(`Cancelling booking ${bookingId}`);
+
+    const booking = await this.prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: {
+        payment: true,
+        reservation: true,
+      },
+    });
+
+    if (!booking) {
+      throw new NotFoundException('Booking not found');
+    }
+
+    if (booking.status === 'CANCELLED') {
+      throw new BadRequestException('Booking already cancelled');
+    }
+
+    if (!['PAYMENT_PENDING', 'CONFIRMED'].includes(booking.status)) {
+      throw new BadRequestException(`Cannot cancel booking with status: ${booking.status}`);
+    }
+
+    try {
+      // Step 1: Cancel/Refund payment if completed
+      if (booking.payment.status === 'COMPLETED') {
+        await firstValueFrom(
+          this.httpService.post(`${this.paymentUrl}/payments/${booking.paymentId}/refund`, {
+            amount: booking.totalAmount,
+            reason: dto.reason,
+          })
+        );
+        this.logger.log('✅ Payment refunded');
+      } else {
+        await firstValueFrom(
+          this.httpService.post(`${this.paymentUrl}/payments/${booking.paymentId}/cancel`)
+        );
+        this.logger.log('✅ Payment cancelled');
+      }
+
+      // Step 2: Cancel reservation
+      await firstValueFrom(
+        this.httpService.post(`${this.seatReservationUrl}/reservations/${booking.reservationId}/cancel`, {
+          userId: booking.userId,
+        })
+      );
+      this.logger.log('✅ Reservation cancelled');
+
+      // Step 3: Update booking status
+      const cancelledBooking = await this.prisma.booking.update({
+        where: { id: bookingId },
+        data: { status: 'CANCELLED' },
+        include: {
+          seats: true,
+          journey: true,
+          payment: true,
+        },
+      });
+
+      // Step 4: Emit cancellation event
+      await this.rabbitMQ.publishBookingEvent({
+        type: 'BOOKING_CANCELLED',
+        bookingId: cancelledBooking.id,
+        userId: cancelledBooking.userId,
+        data: {
+          reason: dto.reason,
+          refundAmount: booking.totalAmount,
+        },
+        timestamp: new Date(),
+      });
+
+      this.logger.log(`✅ Booking cancelled: ${bookingId}`);
+
+      return {
+        ...cancelledBooking,
+        message: 'Booking cancelled successfully. Refund will be processed within 5-7 business days.',
+      };
+    } catch (error) {
+      this.logger.error('❌ Booking cancellation failed', error.message);
+      throw new InternalServerErrorException(
+        error.response?.data?.message || 'Failed to cancel booking'
+      );
+    }
+  }
+
+  /**
+   * Get booking status with journey details
+   */
+  async getBookingStatus(bookingId: string) {
+    const booking = await this.getBooking(bookingId);
+
+    return {
+      id: booking.id,
+      status: booking.status,
+      journey: {
+        trainName: booking.journey.train.name,
+        trainNumber: booking.journey.train.trainNumber,
+        departureTime: booking.journey.departureTime,
+        arrivalTime: booking.journey.arrivalTime,
+      },
+      seats: booking.seats.map(bs => ({
+        seatNumber: bs.seat.seatNumber,
+        coach: bs.seat.coach.coachName,
+        class: bs.seat.coach.coachClass,
+      })),
+      payment: {
+        status: booking.payment.status,
+        amount: booking.payment.amount,
+        method: booking.payment.paymentMethod,
+      },
+      timestamps: {
+        createdAt: booking.createdAt,
+        updatedAt: booking.updatedAt,
+      },
+    };
+  }
+}

@@ -24,6 +24,7 @@ model User {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   refreshTokens RefreshToken[]
+  bookings      Booking[]
 
   @@map("users")
 }
@@ -102,14 +103,15 @@ model Coach {
 }
 
 model Seat {
-  id         String   @id @default(uuid())
-  coachId    String
-  coach      Coach    @relation(fields: [coachId], references: [id], onDelete: Cascade)
-  seatNumber String   @db.VarChar(10) // e.g., A1, B2
-  seatType   SeatType
-  baseFare   Float    @db.DoublePrecision
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id           String         @id @default(uuid())
+  coachId      String
+  coach        Coach          @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  seatNumber   String         @db.VarChar(10) // e.g., A1, B2
+  seatType     SeatType
+  baseFare     Float          @db.DoublePrecision
+  bookingSeats BookingsSeat[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
 
   @@unique([coachId, seatNumber])
   @@index([coachId])
@@ -167,6 +169,7 @@ model Journey {
   updatedAt        DateTime      @updatedAt
 
   reservations     Reservation[]
+  bookings         Booking[]
 
   @@index([trainId])
   @@index([routeId])
@@ -223,6 +226,9 @@ model Reservation {
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
 
+  payment           Payment?
+  booking           Booking?
+
   @@index([userId])
   @@index([journeyId])
   @@index([lockId])
@@ -257,6 +263,9 @@ model Payment {
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
 
+  reservation       Reservation   @relation(fields: [reservationId], references: [id])
+  booking           Booking?
+
   @@index([userId])
   @@index([reservationId])
   @@index([transactionId])
@@ -280,4 +289,51 @@ enum PaymentStatus {
   REFUNDED          // Payment refunded
   PARTIALLY_REFUNDED // Partial refund
   CANCELLED         // Payment cancelled
+}
+
+// Booking Service Models
+model Booking {
+  id              String        @id @default(uuid())
+  userId          String
+  journeyId       String
+  reservationId   String        @unique
+  paymentId       String        @unique
+  totalAmount     Float         @db.DoublePrecision
+  status          BookingStatus @default(DRAFT)
+  seats           BookingsSeat[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  user            User          @relation(fields: [userId], references: [id])
+  journey         Journey       @relation(fields: [journeyId], references: [id])
+  reservation     Reservation   @relation(fields: [reservationId], references: [id])
+  payment         Payment       @relation(fields: [paymentId], references: [id])
+
+  @@index([userId])
+  @@index([journeyId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("bookings")
+}
+
+model BookingsSeat {
+  id         String   @id @default(uuid())
+  bookingId  String
+  seatId     String
+
+  booking    Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  seat       Seat     @relation(fields: [seatId], references: [id])
+
+  @@unique([bookingId, seatId])
+  @@map("bookings_seats")
+}
+
+enum BookingStatus {
+  DRAFT          // Initial state
+  SEATS_LOCKED   // Seats locked, awaiting payment
+  PAYMENT_PENDING // Payment initiated
+  CONFIRMED      // Payment completed, ticket generated
+  CANCELLED      // User cancelled
+  FAILED         // Payment or process failed
+  EXPIRED        // Timeout during process
 }
