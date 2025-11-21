@@ -9,32 +9,48 @@ import { NotificationStatus } from '@prisma/client';
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
-  private transporter: nodemailer.Transporter;
+  private transporter: nodemailer.Transporter | null = null;
   private templateCache: Map<string, handlebars.TemplateDelegate> = new Map();
+  private isSmtpConfigured = false;
 
   constructor(private readonly notificationsService: NotificationsService) {
     this.initializeTransporter();
   }
 
   private initializeTransporter() {
-    this.transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: process.env.SMTP_SECURE === 'true',
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
+    // Check if SMTP credentials are configured
+    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+      this.logger.warn('⚠️  SMTP credentials not configured. Email sending is disabled.');
+      this.logger.warn('To enable emails, configure SMTP_USER and SMTP_PASS in .env file');
+      return;
+    }
 
-    // Verify connection
-    this.transporter.verify((error, success) => {
-      if (error) {
-        this.logger.error('SMTP connection failed:', error);
-      } else {
-        this.logger.log('✅ SMTP server is ready to send emails');
-      }
-    });
+    try {
+      this.transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST || 'smtp.gmail.com',
+        port: parseInt(process.env.SMTP_PORT || '587'),
+        secure: process.env.SMTP_SECURE === 'true',
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS,
+        },
+      });
+
+      // Verify connection asynchronously
+      this.transporter.verify((error, success) => {
+        if (error) {
+          this.logger.error('❌ SMTP connection failed:', error.message);
+          this.logger.warn('Email sending is disabled. Check your SMTP credentials.');
+          this.transporter = null;
+        } else {
+          this.logger.log('✅ SMTP server is ready to send emails');
+          this.isSmtpConfigured = true;
+        }
+      });
+    } catch (error) {
+      this.logger.error('❌ Failed to initialize SMTP transporter:', error);
+      this.transporter = null;
+    }
   }
 
   private async loadTemplate(templateName: string): Promise<handlebars.TemplateDelegate> {
@@ -57,6 +73,21 @@ export class EmailService {
     context: any,
     notificationId: number,
   ): Promise<void> {
+    // Check if SMTP is configured
+    if (!this.transporter || !this.isSmtpConfigured) {
+      const errorMsg = 'SMTP not configured or connection failed';
+      this.logger.warn(`⚠️  ${errorMsg}. Notification ${notificationId} marked as FAILED.`);
+      
+      await this.notificationsService.updateNotificationStatus(
+        notificationId,
+        NotificationStatus.FAILED,
+        errorMsg,
+        0,
+      );
+      
+      return; // Don't throw error, just log and mark as failed
+    }
+
     const maxRetries = parseInt(process.env.MAX_RETRY_ATTEMPTS || '3');
     const retryDelay = parseInt(process.env.RETRY_DELAY_MS || '5000');
 
@@ -85,7 +116,7 @@ export class EmailService {
 
         return;
       } catch (error) {
-        this.logger.error(`❌ Failed to send email (attempt ${attempt + 1}/${maxRetries + 1}):`, error);
+        this.logger.error(`❌ Failed to send email (attempt ${attempt + 1}/${maxRetries + 1}):`, error.message);
 
         if (attempt < maxRetries) {
           // Update status to RETRYING
@@ -107,7 +138,9 @@ export class EmailService {
             attempt,
           );
 
-          throw error;
+          this.logger.error(`❌ Email sending failed after ${maxRetries + 1} attempts for notification ${notificationId}`);
+          // Don't throw error, just log it
+          return;
         }
       }
     }
