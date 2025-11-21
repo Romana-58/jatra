@@ -4,11 +4,11 @@
   "description": "Jatra Railway Schedule and Search Service",
   "main": "dist/main.js",
   "scripts": {
-    "start": "nest start",
-    "start:dev": "nest start --watch",
-    "start:debug": "nest start --debug --watch",
+    "start": "ts-node -r tsconfig-paths/register src/main.ts",
+    "start:dev": "ts-node-dev -r tsconfig-paths/register --respawn --transpile-only src/main.ts",
+    "start:debug": "ts-node-dev -r tsconfig-paths/register --inspect --respawn --transpile-only src/main.ts",
     "start:prod": "node dist/main",
-    "build": "nest build"
+    "build": "tsc"
   },
   "dependencies": {
     "@nestjs/common": "^10.3.0",

@@ -58,8 +58,10 @@ model Station {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  routeStopsFrom RouteStop[] @relation("FromStation")
-  routeStopsTo   RouteStop[] @relation("ToStation")
+  routeStopsFrom   RouteStop[]   @relation("FromStation")
+  routeStopsTo     RouteStop[]   @relation("ToStation")
+  reservationsFrom Reservation[] @relation("ReservationFrom")
+  reservationsTo   Reservation[] @relation("ReservationTo")
 
   @@index([code])
   @@index([city])
@@ -164,6 +166,8 @@ model Journey {
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 
+  reservations     Reservation[]
+
   @@index([trainId])
   @@index([routeId])
   @@index([journeyDate])
@@ -199,4 +203,38 @@ enum JourneyStatus {
   DELAYED
   CANCELLED
   COMPLETED
+}
+
+// Seat Reservation Service Models
+model Reservation {
+  id                String            @id @default(uuid())
+  userId            String
+  journeyId         String
+  journey           Journey           @relation(fields: [journeyId], references: [id])
+  seatIds           String[]          // Array of seat IDs reserved
+  fromStationId     String
+  fromStation       Station           @relation("ReservationFrom", fields: [fromStationId], references: [id])
+  toStationId       String
+  toStation         Station           @relation("ReservationTo", fields: [toStationId], references: [id])
+  status            ReservationStatus @default(LOCKED)
+  lockExpiry        DateTime
+  totalFare         Float             @db.DoublePrecision
+  lockId            String            @unique // Redis lock identifier
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@index([userId])
+  @@index([journeyId])
+  @@index([lockId])
+  @@index([status])
+  @@index([lockExpiry])
+  @@map("reservations")
+}
+
+enum ReservationStatus {
+  LOCKED      // Temporary lock during checkout
+  CONFIRMED   // Payment completed
+  CANCELLED   // User cancelled
+  EXPIRED     // Lock expired without payment
+  RELEASED    // Manually released
 }
