@@ -3,3 +3,4 @@ export * from "./lib/train.interface";
 export * from "./lib/booking.interface";
 export * from "./lib/ticket.interface";
 export * from "./lib/payment.interface";
+export * from "./lib/events.interface";

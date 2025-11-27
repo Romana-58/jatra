@@ -1,20 +1,19 @@
 import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
 import * as amqp from 'amqplib';
-
-export interface BookingEvent {
-  type: 'BOOKING_CONFIRMED' | 'BOOKING_CANCELLED' | 'PAYMENT_FAILED';
-  bookingId: string;
-  userId: string;
-  data: any;
-  timestamp: Date;
-}
+import { randomBytes } from 'crypto';
+import { 
+  DomainEvent, 
+  Exchanges, 
+  EventRoutingKeys,
+  BookingConfirmedEvent,
+  BookingCancelledEvent 
+} from '@jatra/common/interfaces';
 
 @Injectable()
 export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
   private connection: amqp.Connection;
   private channel: amqp.Channel;
   private readonly logger = new Logger(RabbitMQService.name);
-  private readonly exchangeName = process.env.RABBITMQ_NOTIFICATION_EXCHANGE || 'notifications';
 
   async onModuleInit() {
     try {
@@ -22,10 +21,11 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
       this.connection = await amqp.connect(url);
       this.channel = await this.connection.createChannel();
 
-      // Create exchange for notifications
-      await this.channel.assertExchange(this.exchangeName, 'topic', { durable: true });
+      // Create exchanges
+      await this.channel.assertExchange(Exchanges.BOOKING, 'topic', { durable: true });
+      await this.channel.assertExchange(Exchanges.NOTIFICATION, 'topic', { durable: true });
 
-      this.logger.log('✅ RabbitMQ connected and exchange created');
+      this.logger.log('✅ RabbitMQ connected and exchanges created');
     } catch (error) {
       this.logger.error('❌ Failed to connect to RabbitMQ', error);
     }
@@ -36,26 +36,58 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
     await this.connection?.close();
   }
 
-  async publishBookingEvent(event: BookingEvent): Promise<void> {
+  private generateEventId(): string {
+    return `${Date.now()}-${randomBytes(8).toString('hex')}`;
+  }
+
+  async publishEvent(event: DomainEvent, exchange: string): Promise<void> {
     if (!this.channel) {
       this.logger.warn('RabbitMQ channel not available, skipping event publish');
       return;
     }
 
     try {
-      const routingKey = `booking.${event.type.toLowerCase()}`;
       const message = JSON.stringify(event);
 
       this.channel.publish(
-        this.exchangeName,
-        routingKey,
+        exchange,
+        event.eventType,
         Buffer.from(message),
-        { persistent: true }
+        { 
+          persistent: true,
+          contentType: 'application/json',
+          messageId: event.eventId
+        }
       );
 
-      this.logger.log(`📤 Published event: ${event.type} for booking ${event.bookingId}`);
+      this.logger.log(`📤 Published event: ${event.eventType} (ID: ${event.eventId})`);
     } catch (error) {
-      this.logger.error(`Failed to publish event: ${event.type}`, error);
+      this.logger.error(`Failed to publish event: ${event.eventType}`, error);
+      throw error;
     }
+  }
+
+  async publishBookingConfirmed(data: BookingConfirmedEvent['data']): Promise<void> {
+    const event: BookingConfirmedEvent = {
+      eventId: this.generateEventId(),
+      eventType: EventRoutingKeys.BOOKING_CONFIRMED,
+      timestamp: new Date(),
+      source: 'booking-service',
+      data,
+    };
+
+    await this.publishEvent(event, Exchanges.BOOKING);
+  }
+
+  async publishBookingCancelled(data: BookingCancelledEvent['data']): Promise<void> {
+    const event: BookingCancelledEvent = {
+      eventId: this.generateEventId(),
+      eventType: EventRoutingKeys.BOOKING_CANCELLED,
+      timestamp: new Date(),
+      source: 'booking-service',
+      data,
+    };
+
+    await this.publishEvent(event, Exchanges.BOOKING);
   }
 }

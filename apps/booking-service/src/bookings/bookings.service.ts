@@ -179,6 +179,7 @@ export class BookingsService {
         where: { id: bookingId },
         data: { status: 'CONFIRMED' },
         include: {
+          user: true,
           seats: {
             include: {
               seat: true,
@@ -187,36 +188,43 @@ export class BookingsService {
           journey: {
             include: {
               train: true,
-              route: {
-                include: {
-                  stops: {
-                    include: {
-                      station: true,
-                    },
-                  },
-                },
-              },
             },
           },
           payment: true,
-          reservation: true,
+          reservation: {
+            include: {
+              fromStation: true,
+              toStation: true,
+            },
+          },
         },
       });
 
-      // Step 4: Emit event for notification service
-      await this.rabbitMQ.publishBookingEvent({
-        type: 'BOOKING_CONFIRMED',
+      // Step 4: Emit event for notification and ticket services
+
+      await this.rabbitMQ.publishBookingConfirmed({
         bookingId: confirmedBooking.id,
         userId: confirmedBooking.userId,
-        data: {
-          journey: confirmedBooking.journey,
-          seats: confirmedBooking.seats,
-          totalAmount: confirmedBooking.totalAmount,
+        email: confirmedBooking.user.email,
+        phone: confirmedBooking.user.phone,
+        journeyId: confirmedBooking.journeyId,
+        totalAmount: confirmedBooking.totalAmount,
+        seats: confirmedBooking.seats.map(s => ({
+          seatId: s.seat.id,
+          seatNumber: s.seat.seatNumber,
+          coachNumber: `Coach-${s.seat.coachId}`,
+        })),
+        journey: {
+          trainName: confirmedBooking.journey.train.name,
+          trainNumber: confirmedBooking.journey.train.trainNumber,
+          departureTime: confirmedBooking.journey.departureTime,
+          arrivalTime: confirmedBooking.journey.arrivalTime,
+          fromStation: confirmedBooking.reservation.fromStation.name,
+          toStation: confirmedBooking.reservation.toStation.name,
         },
-        timestamp: new Date(),
       });
 
-      this.logger.log(`✅ Booking confirmed: ${bookingId}`);
+      this.logger.log(`✅ Booking confirmed and event published: ${bookingId}`);
 
       return confirmedBooking;
     } catch (error) {
@@ -406,15 +414,13 @@ export class BookingsService {
       });
 
       // Step 4: Emit cancellation event
-      await this.rabbitMQ.publishBookingEvent({
-        type: 'BOOKING_CANCELLED',
+      await this.rabbitMQ.publishBookingCancelled({
         bookingId: cancelledBooking.id,
         userId: cancelledBooking.userId,
-        data: {
-          reason: dto.reason,
-          refundAmount: booking.totalAmount,
-        },
-        timestamp: new Date(),
+        reservationId: booking.reservationId,
+        paymentId: booking.paymentId,
+        refundAmount: booking.totalAmount,
+        reason: dto.reason,
       });
 
       this.logger.log(`✅ Booking cancelled: ${bookingId}`);
