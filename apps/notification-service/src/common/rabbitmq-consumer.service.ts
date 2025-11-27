@@ -2,24 +2,15 @@ import { Injectable, OnModuleInit, Logger } from "@nestjs/common";
 import * as amqp from "amqplib";
 import { EmailService } from "../email/email.service";
 import { NotificationsService } from "../notifications/notifications.service";
-import { NotificationType } from "@jatra/common/types";
-
-interface BookingEvent {
-  type: "BOOKING_CONFIRMED" | "BOOKING_CANCELLED" | "PAYMENT_FAILED";
-  bookingId: number;
-  userId: string; // UUID string from User model
-  userEmail: string;
-  userName: string;
-  bookingDetails: {
-    bookingNumber: string;
-    journeyDate: string;
-    trainName: string;
-    route: string;
-    seatNumbers: string[];
-    totalAmount: number;
-  };
-  timestamp: string;
-}
+import { NotificationType, NotificationChannel } from "@jatra/common/types";
+import {
+  BookingConfirmedEvent,
+  BookingCancelledEvent,
+  PaymentCompletedEvent,
+  PaymentFailedEvent,
+  Exchanges,
+  EventRoutingKeys,
+} from "@jatra/common/interfaces";
 
 @Injectable()
 export class RabbitMQConsumerService implements OnModuleInit {
@@ -42,25 +33,30 @@ export class RabbitMQConsumerService implements OnModuleInit {
       this.connection = await amqp.connect(rabbitmqUrl);
       this.channel = await this.connection.createChannel();
 
-      const exchange = process.env.RABBITMQ_EXCHANGE || "notifications";
-      const queue = process.env.RABBITMQ_QUEUE || "notification_queue";
+      const bookingExchange = Exchanges.BOOKING;
+      const paymentExchange = Exchanges.PAYMENT;
+      const notificationQueue = "notification.events";
 
-      // Assert exchange
-      await this.channel.assertExchange(exchange, "topic", { durable: true });
+      // Assert exchanges
+      await this.channel.assertExchange(bookingExchange, "topic", { durable: true });
+      await this.channel.assertExchange(paymentExchange, "topic", { durable: true });
 
       // Assert queue
-      await this.channel.assertQueue(queue, { durable: true });
+      await this.channel.assertQueue(notificationQueue, { durable: true });
 
-      // Bind queue to exchange with routing patterns
-      await this.channel.bindQueue(queue, exchange, "booking.#");
+      // Bind queue to multiple events
+      await this.channel.bindQueue(notificationQueue, bookingExchange, EventRoutingKeys.BOOKING_CONFIRMED);
+      await this.channel.bindQueue(notificationQueue, bookingExchange, EventRoutingKeys.BOOKING_CANCELLED);
+      await this.channel.bindQueue(notificationQueue, paymentExchange, EventRoutingKeys.PAYMENT_COMPLETED);
+      await this.channel.bindQueue(notificationQueue, paymentExchange, EventRoutingKeys.PAYMENT_FAILED);
 
       this.logger.log(
-        `✅ Connected to RabbitMQ and listening on queue: ${queue}`
+        `✅ Connected to RabbitMQ and listening on queue: ${notificationQueue}`
       );
 
       // Start consuming messages
       this.channel.consume(
-        queue,
+        notificationQueue,
         (msg) => {
           if (msg) {
             this.handleMessage(msg);
@@ -86,9 +82,9 @@ export class RabbitMQConsumerService implements OnModuleInit {
 
   private async handleMessage(msg: amqp.Message) {
     try {
-      const event: BookingEvent = JSON.parse(msg.content.toString());
+      const event = JSON.parse(msg.content.toString());
       this.logger.log(
-        `📩 Received event: ${event.type} for booking ${event.bookingId}`
+        `📩 Received event: ${event.eventType} (ID: ${event.eventId})`
       );
 
       await this.processEvent(event);
@@ -102,62 +98,121 @@ export class RabbitMQConsumerService implements OnModuleInit {
     }
   }
 
-  private async processEvent(event: BookingEvent) {
-    let notificationType: NotificationType;
-    let subject: string;
-    let template: string;
-
-    switch (event.type) {
-      case "BOOKING_CONFIRMED":
-        notificationType = NotificationType.BOOKING_CONFIRMED;
-        subject = `Booking Confirmed - ${event.bookingDetails.bookingNumber}`;
-        template = "booking-confirmed";
+  private async processEvent(event: any) {
+    switch (event.eventType) {
+      case EventRoutingKeys.BOOKING_CONFIRMED:
+        await this.handleBookingConfirmed(event as BookingConfirmedEvent);
         break;
-      case "BOOKING_CANCELLED":
-        notificationType = NotificationType.BOOKING_CANCELLED;
-        subject = `Booking Cancelled - ${event.bookingDetails.bookingNumber}`;
-        template = "booking-cancelled";
+      case EventRoutingKeys.BOOKING_CANCELLED:
+        await this.handleBookingCancelled(event as BookingCancelledEvent);
         break;
-      case "PAYMENT_FAILED":
-        notificationType = NotificationType.PAYMENT_FAILED;
-        subject = `Payment Failed - ${event.bookingDetails.bookingNumber}`;
-        template = "payment-failed";
+      case EventRoutingKeys.PAYMENT_COMPLETED:
+        await this.handlePaymentCompleted(event as PaymentCompletedEvent);
+        break;
+      case EventRoutingKeys.PAYMENT_FAILED:
+        await this.handlePaymentFailed(event as PaymentFailedEvent);
         break;
       default:
-        this.logger.warn(`Unknown event type: ${event.type}`);
-        return;
+        this.logger.warn(`Unknown event type: ${event.eventType}`);
     }
+  }
+
+  private async handleBookingConfirmed(event: BookingConfirmedEvent) {
+    const { data } = event;
 
     try {
       // Create notification record
-      const notification = await this.notificationsService.createNotification({
-        userId: event.userId,
-        type: notificationType,
-        subject,
-        content: `${event.type} for booking ${event.bookingDetails.bookingNumber}`,
-        metadata: event.bookingDetails,
+      await this.notificationsService.createNotification({
+        userId: data.userId,
+        type: NotificationType.BOOKING_CONFIRMED,
+        channel: NotificationChannel.EMAIL,
+        recipient: data.email,
+        subject: `Booking Confirmed - ${data.journey.trainName}`,
+        content: `Your booking has been confirmed for ${data.journey.trainName} (${data.journey.trainNumber})`,
+        metadata: { bookingId: data.bookingId },
       });
 
       // Send email
-      await this.emailService.sendEmail(
-        event.userEmail,
-        subject,
-        template,
-        {
-          userName: event.userName,
-          ...event.bookingDetails,
-        },
-        notification.id
-      );
+      await this.emailService.sendBookingConfirmation({
+        to: data.email,
+        bookingId: data.bookingId,
+        trainName: data.journey.trainName,
+        trainNumber: data.journey.trainNumber,
+        departureTime: data.journey.departureTime,
+        arrivalTime: data.journey.arrivalTime,
+        fromStation: data.journey.fromStation,
+        toStation: data.journey.toStation,
+        seats: data.seats,
+        totalAmount: data.totalAmount,
+      });
 
-      this.logger.log(
-        `✅ Notification sent successfully for booking ${event.bookingId}`
-      );
+      this.logger.log(`✅ Sent booking confirmation to ${data.email}`);
     } catch (error) {
-      this.logger.error(
-        `❌ Failed to process notification for booking ${event.bookingId}:`,
-        error
-      );
+      this.logger.error(`Failed to send booking confirmation:`, error);
+      throw error;
+    }
+  }
+
+  private async handleBookingCancelled(event: BookingCancelledEvent) {
+    const { data } = event;
+
+    try {
+      // Create notification record
+      await this.notificationsService.createNotification({
+        userId: data.userId,
+        type: NotificationType.BOOKING_CANCELLED,
+        channel: NotificationChannel.EMAIL,
+        recipient: data.userId, // Email will be fetched from user
+        subject: `Booking Cancelled`,
+        content: `Your booking has been cancelled. Refund amount: $${data.refundAmount}`,
+        metadata: { bookingId: data.bookingId, reason: data.reason },
+      });
+
+      this.logger.log(`✅ Sent booking cancellation notification`);
+    } catch (error) {
+      this.logger.error(`Failed to send booking cancellation:`, error);
+      throw error;
+    }
+  }
+
+  private async handlePaymentCompleted(event: PaymentCompletedEvent) {
+    const { data } = event;
+
+    try {
+      await this.notificationsService.createNotification({
+        userId: data.userId,
+        type: NotificationType.PAYMENT_SUCCESS,
+        channel: NotificationChannel.EMAIL,
+        recipient: data.userId,
+        subject: `Payment Successful`,
+        content: `Payment of $${data.amount} completed successfully. Transaction ID: ${data.transactionId}`,
+        metadata: { paymentId: data.paymentId, transactionId: data.transactionId },
+      });
+
+      this.logger.log(`✅ Sent payment success notification`);
+    } catch (error) {
+      this.logger.error(`Failed to send payment success:`, error);
+      throw error;
+    }
+  }
+
+  private async handlePaymentFailed(event: PaymentFailedEvent) {
+    const { data } = event;
+
+    try {
+      await this.notificationsService.createNotification({
+        userId: data.userId,
+        type: NotificationType.PAYMENT_FAILED,
+        channel: NotificationChannel.EMAIL,
+        recipient: data.userId,
+        subject: `Payment Failed`,
+        content: `Payment of $${data.amount} failed. Reason: ${data.reason}`,
+        metadata: { paymentId: data.paymentId, errorCode: data.errorCode },
+      });
+
+      this.logger.log(`✅ Sent payment failure notification`);
+    } catch (error) {
+      this.logger.error(`Failed to send payment failure:`, error);
       throw error;
     }
   }
