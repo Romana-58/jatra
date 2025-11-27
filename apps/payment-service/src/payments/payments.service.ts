@@ -6,6 +6,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../common/prisma.service';
+import { RabbitMQService } from '../common/rabbitmq.service';
 import { GatewayService } from '../gateway/gateway.service';
 import { InitiatePaymentDto } from './dto/initiate-payment.dto';
 import { ConfirmPaymentDto } from './dto/confirm-payment.dto';
@@ -20,6 +21,7 @@ export class PaymentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly gatewayService: GatewayService,
+    private readonly rabbitMQ: RabbitMQService,
   ) {}
 
   async initiatePayment(dto: InitiatePaymentDto) {
@@ -127,7 +129,28 @@ export class PaymentsService {
 
     this.logger.log(`Payment confirmed: ${payment.id}, Status: ${newStatus}`);
 
-    // TODO: Emit RabbitMQ event for booking service to confirm reservation
+    // Emit event based on payment status
+    if (newStatus === 'COMPLETED') {
+      await this.rabbitMQ.publishPaymentCompleted({
+        paymentId: updatedPayment.id,
+        userId: payment.userId,
+        reservationId: payment.reservationId,
+        bookingId: payment.bookingId,
+        amount: payment.amount,
+        transactionId: dto.transactionId,
+        paymentMethod: payment.paymentMethod,
+      });
+    } else if (newStatus === 'FAILED') {
+      await this.rabbitMQ.publishPaymentFailed({
+        paymentId: updatedPayment.id,
+        userId: payment.userId,
+        reservationId: payment.reservationId,
+        bookingId: payment.bookingId,
+        amount: payment.amount,
+        reason: dto.gatewayResponse?.bankReference || 'Payment failed',
+        errorCode: dto.gatewayResponse?.code,
+      });
+    }
 
     return {
       success: true,
@@ -248,7 +271,15 @@ export class PaymentsService {
 
     this.logger.log(`Payment refunded: ${id}, Amount: ${refundAmount}, Status: ${newStatus}`);
 
-    // TODO: Emit RabbitMQ event for notification service
+    // Emit refund completed event
+    await this.rabbitMQ.publishRefundCompleted({
+      refundId: `refund-${Date.now()}`,
+      paymentId: updatedPayment.id,
+      bookingId: payment.bookingId || '',
+      userId: payment.userId,
+      amount: refundAmount,
+      transactionId: gatewayResponse.transactionId || '',
+    });
 
     return {
       success: true,
