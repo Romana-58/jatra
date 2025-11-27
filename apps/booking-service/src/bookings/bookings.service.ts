@@ -85,7 +85,8 @@ export class BookingsService {
                 include: {
                   stops: {
                     include: {
-                      station: true,
+                      fromStation: true,
+                      toStation: true,
                     },
                   },
                 },
@@ -272,10 +273,11 @@ export class BookingsService {
               include: {
                 stops: {
                   include: {
-                    station: true,
+                    fromStation: true,
+                    toStation: true,
                   },
                   orderBy: {
-                    stopNumber: 'asc',
+                    stopOrder: 'asc',
                   },
                 },
               },
@@ -341,7 +343,8 @@ export class BookingsService {
                 include: {
                   stops: {
                     include: {
-                      station: true,
+                      fromStation: true,
+                      toStation: true,
                     },
                   },
                 },
@@ -477,8 +480,8 @@ export class BookingsService {
       },
       seats: booking.seats.map(bs => ({
         seatNumber: bs.seat.seatNumber,
-        coach: bs.seat.coach.coachName,
-        class: bs.seat.coach.coachClass,
+        coach: bs.seat.coach.coachCode,
+        class: bs.seat.coach.coachType,
       })),
       payment: {
         status: booking.payment.status,
