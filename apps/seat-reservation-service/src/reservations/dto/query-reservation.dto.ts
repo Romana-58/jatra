@@ -1,23 +1,16 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, IsEnum, IsInt, Min } from 'class-validator';
-
-export enum ReservationStatusQuery {
-  LOCKED = 'LOCKED',
-  CONFIRMED = 'CONFIRMED',
-  CANCELLED = 'CANCELLED',
-  EXPIRED = 'EXPIRED',
-  RELEASED = 'RELEASED',
-}
+import { ReservationStatus } from '@jatra/common/types';
 
 export class QueryReservationDto {
   @ApiPropertyOptional({
     description: 'Filter by reservation status',
-    enum: ReservationStatusQuery,
+    enum: ReservationStatus,
     example: 'CONFIRMED',
   })
   @IsOptional()
-  @IsEnum(ReservationStatusQuery)
-  status?: ReservationStatusQuery;
+  @IsEnum(ReservationStatus)
+  status?: ReservationStatus;
 
   @ApiPropertyOptional({
     description: 'Page number for pagination',
