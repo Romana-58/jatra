@@ -61,3 +61,36 @@ func JWTAuth() gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+// RequireRole middleware to restrict access based on user roles
+func RequireRole(allowedRoles ...string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		role, exists := c.Get("role")
+		if !exists {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Role not found in token"})
+			c.Abort()
+			return
+		}
+
+		userRole, ok := role.(string)
+		if !ok {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid role format"})
+			c.Abort()
+			return
+		}
+
+		// Check if user's role is in the allowed roles
+		for _, allowedRole := range allowedRoles {
+			if userRole == allowedRole {
+				c.Next()
+				return
+			}
+		}
+
+		c.JSON(http.StatusForbidden, gin.H{
+			"error":   "Access denied",
+			"message": "You do not have permission to access this resource",
+		})
+		c.Abort()
+	}
+}

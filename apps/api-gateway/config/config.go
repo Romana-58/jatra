@@ -21,6 +21,10 @@ PaymentServiceURL          string
 BookingServiceURL          string
 TicketServiceURL           string
 NotificationServiceURL     string
+UserServiceURL             string
+SearchServiceURL           string
+AdminServiceURL            string
+ReportingServiceURL        string
 RateLimitRequests          int
 RateLimitWindowSeconds     int
 CORSAllowedOrigins         []string
@@ -51,6 +55,10 @@ PaymentServiceURL:          getEnv("PAYMENT_SERVICE_URL", "http://localhost:3004
 BookingServiceURL:          getEnv("BOOKING_SERVICE_URL", "http://localhost:3005"),
 TicketServiceURL:           getEnv("TICKET_SERVICE_URL", "http://localhost:3006"),
 NotificationServiceURL:     getEnv("NOTIFICATION_SERVICE_URL", "http://localhost:3007"),
+UserServiceURL:             getEnv("USER_SERVICE_URL", "http://localhost:3008"),
+SearchServiceURL:           getEnv("SEARCH_SERVICE_URL", "http://localhost:3009"),
+AdminServiceURL:            getEnv("ADMIN_SERVICE_URL", "http://localhost:3010"),
+ReportingServiceURL:        getEnv("REPORTING_SERVICE_URL", "http://localhost:3011"),
 RateLimitRequests:          rateLimitRequests,
 RateLimitWindowSeconds:     rateLimitWindow,
 CORSAllowedOrigins:         strings.Split(getEnv("CORS_ALLOWED_ORIGINS", "http://localhost:3001,http://localhost:5173"), ","),
