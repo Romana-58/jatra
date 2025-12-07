@@ -1,6 +1,6 @@
 import { Injectable, Inject, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '@jatra/database';
+import { PrismaService } from '../common/prisma.service';
 import { RedisClientType } from 'redis';
 import { REDIS_CLIENT } from '../common/redis.module';
 import { SearchJourneysDto } from './dto/search-journeys.dto';
@@ -43,8 +43,10 @@ export class SearchService {
     // Cache miss - fetch from database
     this.logger.log(`Cache miss for journey search: ${cacheKey}`);
     
-    const skip = (dto.page - 1) * dto.limit;
-    const take = dto.limit;
+    const page = dto.page ?? 1;
+    const limit = dto.limit ?? 10;
+    const skip = (page - 1) * limit;
+    const take = limit;
 
     // Find stations by ID or code
     const fromStation = await this.findStation(dto.from);
@@ -59,33 +61,48 @@ export class SearchService {
       where: {
         stops: {
           some: {
-            stationId: fromStation.id,
+            OR: [
+              { fromStationId: fromStation.id },
+              { toStationId: fromStation.id },
+            ],
           },
         },
       },
       include: {
         stops: {
-          orderBy: { stopNumber: 'asc' },
-          include: { station: true },
+          orderBy: { stopOrder: 'asc' },
+          include: {
+            fromStation: true,
+            toStation: true,
+          },
         },
       },
     });
 
     // Filter routes that have both stations in correct order
-    const validRoutes = routes.filter((route) => {
-      const fromStop = route.stops.find((s) => s.stationId === fromStation.id);
-      const toStop = route.stops.find((s) => s.stationId === toStation.id);
-      return fromStop && toStop && fromStop.stopNumber < toStop.stopNumber;
+    const validRoutes = routes.filter((route: any) => {
+      const hasFrom = route.stops.some((s: any) => 
+        s.fromStationId === fromStation.id || s.toStationId === fromStation.id
+      );
+      const hasTo = route.stops.some((s: any) => 
+        s.fromStationId === toStation.id || s.toStationId === toStation.id
+      );
+      return hasFrom && hasTo;
     });
 
-    const routeIds = validRoutes.map((r) => r.id);
+    const routeIds = validRoutes.map((r: any) => r.id);
+
+    const startDate = new Date(dto.date);
+    const endDate = new Date(startDate.getTime() + 24 * 60 * 60 * 1000);
 
     // Count total journeys
     const total = await this.prisma.journey.count({
       where: {
         routeId: { in: routeIds },
-        departureTime: { gte: new Date(dto.date) },
-        departureTime: { lt: new Date(new Date(dto.date).getTime() + 24 * 60 * 60 * 1000) },
+        departureTime: {
+          gte: startDate,
+          lt: endDate,
+        },
       },
     });
 
@@ -93,8 +110,10 @@ export class SearchService {
     const journeys = await this.prisma.journey.findMany({
       where: {
         routeId: { in: routeIds },
-        departureTime: { gte: new Date(dto.date) },
-        departureTime: { lt: new Date(new Date(dto.date).getTime() + 24 * 60 * 60 * 1000) },
+        departureTime: {
+          gte: startDate,
+          lt: endDate,
+        },
       },
       include: {
         train: {
@@ -109,8 +128,11 @@ export class SearchService {
         route: {
           include: {
             stops: {
-              orderBy: { stopNumber: 'asc' },
-              include: { station: true },
+              orderBy: { stopOrder: 'asc' },
+              include: {
+                fromStation: true,
+                toStation: true,
+              },
             },
           },
         },
@@ -124,9 +146,9 @@ export class SearchService {
       data: journeys,
       meta: {
         total,
-        page: dto.page,
-        limit: dto.limit,
-        totalPages: Math.ceil(total / dto.limit),
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
       },
       fromCache: false,
     };
@@ -154,7 +176,7 @@ export class SearchService {
     }
 
     // Fetch from Redis analytics
-    const searchCounts = await this.redis.zRevRange(
+    const searchCounts = await this.redis.zRangeWithScores(
       `${this.cachePrefix}analytics:routes`,
       0,
       limit - 1,
@@ -162,9 +184,8 @@ export class SearchService {
     );
 
     const popularRoutes = [];
-    for (const key of searchCounts) {
-      const [from, to] = key.split(':');
-      const count = await this.redis.zScore(`${this.cachePrefix}analytics:routes`, key);
+    for (const item of searchCounts) {
+      const [from, to] = item.value.split(':');
       
       const fromStation = await this.findStation(from);
       const toStation = await this.findStation(to);
@@ -173,7 +194,7 @@ export class SearchService {
         popularRoutes.push({
           from: fromStation,
           to: toStation,
-          searchCount: count || 0,
+          searchCount: item.score,
         });
       }
     }
@@ -245,14 +266,15 @@ export class SearchService {
    * Get search analytics
    */
   async getSearchAnalytics(limit: number = 20) {
-    const routes = await this.redis.zRevRangeWithScores(
+    const routes = await this.redis.zRangeWithScores(
       `${this.cachePrefix}analytics:routes`,
       0,
       limit - 1,
+      { REV: true },
     );
 
     const analytics = await Promise.all(
-      routes.map(async ({ value: key, score }) => {
+      routes.map(async ({ value: key, score }: { value: string; score: number }) => {
         const [from, to] = key.split(':');
         const fromStation = await this.findStation(from);
         const toStation = await this.findStation(to);

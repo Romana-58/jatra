@@ -10,17 +10,25 @@ export const REDIS_CLIENT = 'REDIS_CLIENT';
     {
       provide: REDIS_CLIENT,
       useFactory: async (configService: ConfigService) => {
+        const host = configService.get('REDIS_HOST', 'localhost');
+        const port = configService.get('REDIS_PORT', '6379');
+        const password = configService.get('REDIS_PASSWORD', '');
+        const database = configService.get('REDIS_DB', '1');
+
+        // Build Redis URL with authentication
+        const redisUrl = password
+          ? `redis://:${password}@${host}:${port}/${database}`
+          : `redis://${host}:${port}/${database}`;
+
+        console.log(`🔗 Connecting to Redis at ${host}:${port} (DB ${database})`);
+
         const client = createClient({
-          socket: {
-            host: configService.get('REDIS_HOST', 'localhost'),
-            port: configService.get('REDIS_PORT', 6379),
-          },
-          password: configService.get('REDIS_PASSWORD'),
-          database: configService.get('REDIS_DB', 0),
+          url: redisUrl,
         });
 
-        client.on('error', (err) => console.error('Redis Client Error', err));
+        client.on('error', (err: Error) => console.error('Redis Client Error', err));
         client.on('connect', () => console.log('✅ Redis connected successfully'));
+        client.on('ready', () => console.log('✅ Redis ready for commands'));
 
         await client.connect();
         return client;
