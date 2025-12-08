@@ -1,10 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from "@nestjs/common";
 import {
   ISmsProvider,
   SmsProviderConfig,
   SendSmsParams,
   SendSmsResult,
-} from './sms-provider.interface';
+} from "./sms-provider.interface";
 
 @Injectable()
 export class MockSmsProvider implements ISmsProvider {
@@ -15,7 +15,7 @@ export class MockSmsProvider implements ISmsProvider {
   async initialize(config: SmsProviderConfig): Promise<void> {
     this.config = config;
     this.configured = true;
-    this.logger.log('✅ Mock SMS provider initialized (no actual SMS sent)');
+    this.logger.log("✅ Mock SMS provider initialized (no actual SMS sent)");
   }
 
   isConfigured(): boolean {
@@ -26,12 +26,14 @@ export class MockSmsProvider implements ISmsProvider {
     if (!this.isConfigured()) {
       return {
         success: false,
-        error: 'Mock provider not configured',
+        error: "Mock provider not configured",
       };
     }
 
-    const mockMessageId = `mock-sms-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
+    const mockMessageId = `mock-sms-${Date.now()}-${Math.random()
+      .toString(36)
+      .substr(2, 9)}`;
+
     this.logger.log(`📱 [MOCK] SMS would be sent to: ${params.to}`);
     this.logger.log(`📱 [MOCK] Message: ${params.message}`);
     this.logger.log(`📱 [MOCK] Message ID: ${mockMessageId}`);
@@ -46,6 +48,6 @@ export class MockSmsProvider implements ISmsProvider {
   }
 
   getProviderName(): string {
-    return 'Mock';
+    return "Mock";
   }
 }

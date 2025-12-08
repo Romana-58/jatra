@@ -1,11 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { Twilio } from 'twilio';
+import { Injectable, Logger } from "@nestjs/common";
+import { Twilio } from "twilio";
 import {
   ISmsProvider,
   SmsProviderConfig,
   SendSmsParams,
   SendSmsResult,
-} from './sms-provider.interface';
+} from "./sms-provider.interface";
 
 @Injectable()
 export class TwilioSmsProvider implements ISmsProvider {
@@ -18,21 +18,24 @@ export class TwilioSmsProvider implements ISmsProvider {
     this.config = config;
 
     if (!config.accountSid || !config.authToken) {
-      this.logger.warn('⚠️  Twilio credentials not provided');
+      this.logger.warn("⚠️  Twilio credentials not provided");
       return;
     }
 
     if (!config.fromNumber) {
-      this.logger.warn('⚠️  Twilio from number not provided');
+      this.logger.warn("⚠️  Twilio from number not provided");
       return;
     }
 
     try {
       this.client = new Twilio(config.accountSid, config.authToken);
       this.configured = true;
-      this.logger.log('✅ Twilio SMS provider initialized successfully');
+      this.logger.log("✅ Twilio SMS provider initialized successfully");
     } catch (error) {
-      this.logger.error('❌ Failed to initialize Twilio provider:', error.message);
+      this.logger.error(
+        "❌ Failed to initialize Twilio provider:",
+        error.message
+      );
       this.client = null;
     }
   }
@@ -45,7 +48,7 @@ export class TwilioSmsProvider implements ISmsProvider {
     if (!this.isConfigured()) {
       return {
         success: false,
-        error: 'Twilio provider not configured',
+        error: "Twilio provider not configured",
       };
     }
 
@@ -72,6 +75,6 @@ export class TwilioSmsProvider implements ISmsProvider {
   }
 
   getProviderName(): string {
-    return 'Twilio';
+    return "Twilio";
   }
 }

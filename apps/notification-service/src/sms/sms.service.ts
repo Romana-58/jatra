@@ -1,12 +1,12 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { NotificationsService } from '../notifications/notifications.service';
-import { NotificationStatus } from '@jatra/common/types';
+import { Injectable, Logger } from "@nestjs/common";
+import { NotificationsService } from "../notifications/notifications.service";
+import { NotificationStatus } from "@jatra/common/types";
 import {
   ISmsProvider,
   SmsProvider,
   TwilioSmsProvider,
   MockSmsProvider,
-} from './providers';
+} from "./providers";
 
 @Injectable()
 export class SmsService {
@@ -18,7 +18,9 @@ export class SmsService {
   }
 
   private async initializeProvider() {
-    const providerType = (process.env.SMS_PROVIDER || SmsProvider.MOCK).toUpperCase();
+    const providerType = (
+      process.env.SMS_PROVIDER || SmsProvider.MOCK
+    ).toUpperCase();
 
     this.logger.log(`📱 Initializing SMS provider: ${providerType}`);
 
@@ -66,8 +68,8 @@ export class SmsService {
       return;
     }
 
-    const maxRetries = parseInt(process.env.MAX_RETRY_ATTEMPTS || '3');
-    const retryDelay = parseInt(process.env.RETRY_DELAY_MS || '5000');
+    const maxRetries = parseInt(process.env.MAX_RETRY_ATTEMPTS || "3");
+    const retryDelay = parseInt(process.env.RETRY_DELAY_MS || "5000");
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
@@ -77,7 +79,7 @@ export class SmsService {
         });
 
         if (!result.success) {
-          throw new Error(result.error || 'SMS sending failed');
+          throw new Error(result.error || "SMS sending failed");
         }
 
         this.logger.log(`✅ SMS sent to ${to}: ${result.messageId}`);
@@ -113,7 +115,9 @@ export class SmsService {
           );
 
           this.logger.error(
-            `❌ SMS sending failed after ${maxRetries + 1} attempts for notification ${notificationId}`
+            `❌ SMS sending failed after ${
+              maxRetries + 1
+            } attempts for notification ${notificationId}`
           );
           return;
         }
@@ -121,7 +125,11 @@ export class SmsService {
     }
   }
 
-  async sendOtp(phoneNumber: string, otp: string, notificationId: number): Promise<void> {
+  async sendOtp(
+    phoneNumber: string,
+    otp: string,
+    notificationId: number
+  ): Promise<void> {
     const message = `Your Jatra Railway OTP is: ${otp}. Valid for 10 minutes. Do not share this code.`;
     await this.sendSms(phoneNumber, message, notificationId);
   }
