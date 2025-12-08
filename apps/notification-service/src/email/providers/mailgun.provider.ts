@@ -1,11 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
-import * as nodemailer from 'nodemailer';
+import { Injectable, Logger } from "@nestjs/common";
+import * as nodemailer from "nodemailer";
 import {
   IEmailProvider,
   EmailProviderConfig,
   SendEmailParams,
   SendEmailResult,
-} from './email-provider.interface';
+} from "./email-provider.interface";
 
 @Injectable()
 export class MailgunEmailProvider implements IEmailProvider {
@@ -18,13 +18,13 @@ export class MailgunEmailProvider implements IEmailProvider {
     this.config = config;
 
     if (!config.user || !config.password) {
-      this.logger.warn('⚠️  Mailgun credentials not provided');
+      this.logger.warn("⚠️  Mailgun credentials not provided");
       return;
     }
 
     try {
       this.transporter = nodemailer.createTransport({
-        host: config.host || 'smtp.mailgun.org',
+        host: config.host || "smtp.mailgun.org",
         port: config.port || 587,
         secure: config.secure || false,
         auth: {
@@ -32,7 +32,7 @@ export class MailgunEmailProvider implements IEmailProvider {
           pass: config.password,
         },
         tls: {
-          ciphers: 'SSLv3',
+          ciphers: "SSLv3",
         },
       });
 
@@ -40,10 +40,13 @@ export class MailgunEmailProvider implements IEmailProvider {
       const isValid = await this.verify();
       if (isValid) {
         this.configured = true;
-        this.logger.log('✅ Mailgun SMTP provider initialized successfully');
+        this.logger.log("✅ Mailgun SMTP provider initialized successfully");
       }
     } catch (error) {
-      this.logger.error('❌ Failed to initialize Mailgun provider:', error.message);
+      this.logger.error(
+        "❌ Failed to initialize Mailgun provider:",
+        error.message
+      );
       this.transporter = null;
     }
   }
@@ -56,7 +59,7 @@ export class MailgunEmailProvider implements IEmailProvider {
     if (!this.isConfigured()) {
       return {
         success: false,
-        error: 'Mailgun provider not configured',
+        error: "Mailgun provider not configured",
       };
     }
 
@@ -68,7 +71,9 @@ export class MailgunEmailProvider implements IEmailProvider {
         html: params.html,
       });
 
-      this.logger.log(`✅ Email sent via Mailgun to ${params.to}: ${info.messageId}`);
+      this.logger.log(
+        `✅ Email sent via Mailgun to ${params.to}: ${info.messageId}`
+      );
 
       return {
         success: true,
@@ -92,12 +97,12 @@ export class MailgunEmailProvider implements IEmailProvider {
       await this.transporter.verify();
       return true;
     } catch (error) {
-      this.logger.error('❌ Mailgun verification failed:', error.message);
+      this.logger.error("❌ Mailgun verification failed:", error.message);
       return false;
     }
   }
 
   getProviderName(): string {
-    return 'Mailgun';
+    return "Mailgun";
   }
 }

@@ -23,7 +23,9 @@ export class EmailService {
 
   private async initializeProvider() {
     // Determine which provider to use based on environment variable
-    const providerType = (process.env.EMAIL_PROVIDER || EmailProvider.MOCK).toUpperCase();
+    const providerType = (
+      process.env.EMAIL_PROVIDER || EmailProvider.MOCK
+    ).toUpperCase();
 
     this.logger.log(`📧 Initializing email provider: ${providerType}`);
 
@@ -116,7 +118,7 @@ export class EmailService {
         });
 
         if (!result.success) {
-          throw new Error(result.error || 'Email sending failed');
+          throw new Error(result.error || "Email sending failed");
         }
 
         this.logger.log(`✅ Email sent to ${to}: ${result.messageId}`);

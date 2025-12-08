@@ -1,10 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from "@nestjs/common";
 import {
   IEmailProvider,
   EmailProviderConfig,
   SendEmailParams,
   SendEmailResult,
-} from './email-provider.interface';
+} from "./email-provider.interface";
 
 @Injectable()
 export class MockEmailProvider implements IEmailProvider {
@@ -15,7 +15,9 @@ export class MockEmailProvider implements IEmailProvider {
   async initialize(config: EmailProviderConfig): Promise<void> {
     this.config = config;
     this.configured = true;
-    this.logger.log('✅ Mock email provider initialized (no actual emails sent)');
+    this.logger.log(
+      "✅ Mock email provider initialized (no actual emails sent)"
+    );
   }
 
   isConfigured(): boolean {
@@ -26,13 +28,15 @@ export class MockEmailProvider implements IEmailProvider {
     if (!this.isConfigured()) {
       return {
         success: false,
-        error: 'Mock provider not configured',
+        error: "Mock provider not configured",
       };
     }
 
     // Simulate email sending with random success/failure for testing
-    const mockMessageId = `mock-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
+    const mockMessageId = `mock-${Date.now()}-${Math.random()
+      .toString(36)
+      .substr(2, 9)}`;
+
     this.logger.log(`📧 [MOCK] Email would be sent to: ${params.to}`);
     this.logger.log(`📧 [MOCK] Subject: ${params.subject}`);
     this.logger.log(`📧 [MOCK] Message ID: ${mockMessageId}`);
@@ -47,11 +51,11 @@ export class MockEmailProvider implements IEmailProvider {
   }
 
   async verify(): Promise<boolean> {
-    this.logger.log('✅ [MOCK] Email provider verification successful');
+    this.logger.log("✅ [MOCK] Email provider verification successful");
     return true;
   }
 
   getProviderName(): string {
-    return 'Mock';
+    return "Mock";
   }
 }
