@@ -36,7 +36,6 @@ spec:
       - name: admin-service
         image: docker.io/jatra/admin-service:1.0
         imagePullPolicy: Never
-        imagePullPolicy: Never
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3010

@@ -36,8 +36,6 @@ spec:
       - name: seat-reservation-service
         image: docker.io/jatra/seat-reservation-service:1.0
         imagePullPolicy: Never
-        imagePullPolicy: Never
-        imagePullPolicy: Never
         ports:
         - containerPort: 3003
           name: http

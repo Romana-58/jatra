@@ -36,7 +36,6 @@ spec:
       - name: auth-service
         image: docker.io/jatra/auth-service:1.0
         imagePullPolicy: Never
-        imagePullPolicy: Never
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3001

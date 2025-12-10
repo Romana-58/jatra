@@ -36,8 +36,6 @@ spec:
       - name: user-service
         image: docker.io/jatra/user-service:1.0
         imagePullPolicy: Never
-        imagePullPolicy: Never
-        imagePullPolicy: Never
         ports:
         - containerPort: 3008
           name: http

@@ -36,8 +36,6 @@ spec:
       - name: ticket-service
         image: docker.io/jatra/ticket-service:1.0
         imagePullPolicy: Never
-        imagePullPolicy: Never
-        imagePullPolicy: Never
         ports:
         - containerPort: 3006
           name: http

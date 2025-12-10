@@ -36,7 +36,6 @@ spec:
       - name: booking-service
         image: docker.io/jatra/booking-service:1.0
         imagePullPolicy: Never
-        imagePullPolicy: Never
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3005

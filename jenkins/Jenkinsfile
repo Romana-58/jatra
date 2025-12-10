@@ -43,8 +43,9 @@ pipeline {
                 script {
                     echo "🔍 Detecting changed services..."
                     sh '''
-                        chmod +x ${WORKSPACE_DIR}/jenkins/scripts/*.sh
-                        ${WORKSPACE_DIR}/jenkins/scripts/detect-changes.sh
+                        cp -r ${WORKSPACE_DIR}/jenkins /tmp/
+                        chmod +x /tmp/jenkins/scripts/*.sh
+                        /tmp/jenkins/scripts/detect-changes.sh
                     '''
                     
                     // Read changed services
@@ -66,7 +67,7 @@ pipeline {
                 script {
                     echo "🏗️  Building Docker images..."
                     sh '''
-                        ${WORKSPACE_DIR}/jenkins/scripts/build-services.sh \
+                        /tmp/jenkins/scripts/build-services.sh \
                             "${BUILD_MODE}" \
                             "${CHANGED_SERVICES}" \
                             "${IMAGE_TAG}"
@@ -80,9 +81,12 @@ pipeline {
                 script {
                     echo "📥 Loading images to Minikube..."
                     sh '''
+                        docker exec -u root jenkins sh -c "
+                        export PATH=/usr/local/bin:\$PATH
                         ${WORKSPACE_DIR}/jenkins/scripts/load-to-minikube.sh \
-                            "${BUILD_MODE}" \
-                            "${CHANGED_SERVICES}"
+                            '${BUILD_MODE}' \
+                            '${CHANGED_SERVICES}'
+                        "
                     '''
                 }
             }
@@ -93,6 +97,7 @@ pipeline {
                 script {
                     echo "🚀 Deploying to Kubernetes..."
                     sh '''
+                        export KUBECONFIG=/var/jenkins_home/.kube/config
                         ${WORKSPACE_DIR}/jenkins/scripts/deploy-k8s.sh \
                             "${BUILD_MODE}" \
                             "${CHANGED_SERVICES}"
@@ -106,6 +111,7 @@ pipeline {
                 script {
                     echo "🏥 Running health checks..."
                     sh '''
+                        export KUBECONFIG=/var/jenkins_home/.kube/config
                         ${WORKSPACE_DIR}/jenkins/scripts/health-check.sh \
                             "${BUILD_MODE}" \
                             "${CHANGED_SERVICES}"
@@ -123,7 +129,10 @@ pipeline {
         }
         failure {
             echo '❌ Pipeline failed!'
-            sh 'kubectl get pods -n jatra || echo "Cannot get pod status"'
+            sh '''
+                export KUBECONFIG=/var/jenkins_home/.kube/config
+                kubectl get pods -n jatra || echo "Cannot get pod status"
+            '''
         }
         always {
             cleanWs()
