@@ -34,8 +34,10 @@ spec:
     spec:
       containers:
       - name: user-service
-        image: localhost:5000/jatra/user-service:1.0
-        imagePullPolicy: IfNotPresent
+        image: docker.io/jatra/user-service:1.0
+        imagePullPolicy: Never
+        imagePullPolicy: Never
+        imagePullPolicy: Never
         ports:
         - containerPort: 3008
           name: http
@@ -102,19 +104,3 @@ spec:
           limits:
             memory: "512Mi"
             cpu: "500m"
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 3008
-          initialDelaySeconds: 60
-          periodSeconds: 10
-          timeoutSeconds: 5
-          failureThreshold: 3
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 3008
-          initialDelaySeconds: 30
-          periodSeconds: 5
-          timeoutSeconds: 3
-          failureThreshold: 3

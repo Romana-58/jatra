@@ -34,8 +34,10 @@ spec:
     spec:
       containers:
       - name: seat-reservation-service
-        image: localhost:5000/jatra/seat-reservation-service:1.0
-        imagePullPolicy: IfNotPresent
+        image: docker.io/jatra/seat-reservation-service:1.0
+        imagePullPolicy: Never
+        imagePullPolicy: Never
+        imagePullPolicy: Never
         ports:
         - containerPort: 3003
           name: http
@@ -102,19 +104,3 @@ spec:
           limits:
             memory: "1024Mi"
             cpu: "1000m"
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 3003
-          initialDelaySeconds: 60
-          periodSeconds: 10
-          timeoutSeconds: 5
-          failureThreshold: 3
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 3003
-          initialDelaySeconds: 30
-          periodSeconds: 5
-          timeoutSeconds: 3
-          failureThreshold: 3

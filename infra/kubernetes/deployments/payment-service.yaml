@@ -34,7 +34,9 @@ spec:
     spec:
       containers:
       - name: payment-service
-        image: localhost:5000/jatra/payment-service:1.0
+        image: docker.io/jatra/payment-service:1.0
+        imagePullPolicy: Never
+        imagePullPolicy: Never
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3004
@@ -102,19 +104,3 @@ spec:
           limits:
             memory: "512Mi"
             cpu: "500m"
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 3004
-          initialDelaySeconds: 60
-          periodSeconds: 10
-          timeoutSeconds: 5
-          failureThreshold: 3
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 3004
-          initialDelaySeconds: 30
-          periodSeconds: 5
-          timeoutSeconds: 3
-          failureThreshold: 3

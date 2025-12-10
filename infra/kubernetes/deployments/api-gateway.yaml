@@ -34,7 +34,8 @@ spec:
     spec:
       containers:
       - name: api-gateway
-        image: localhost:5000/jatra/api-gateway:1.0
+        image: docker.io/jatra/api-gateway:1.0
+        imagePullPolicy: Never
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3000
