@@ -73,10 +73,6 @@ spec:
                   key: rabbitmq-password
             - name: RABBITMQ_DEFAULT_VHOST
               value: "/jatra"
-            - name: RABBITMQ_VM_MEMORY_HIGH_WATERMARK
-              value: "0.6"
-            - name: RABBITMQ_DISK_FREE_LIMIT
-              value: "2GB"
           volumeMounts:
             - name: rabbitmq-storage
               mountPath: /var/lib/rabbitmq

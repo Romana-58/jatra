@@ -42,8 +42,8 @@ RUN npx prisma generate --schema=./libs/database/prisma/schema.prisma
 
 WORKDIR /app/apps/auth-service
 
-# Build with NestJS CLI instead of webpack
-RUN pnpm build
+# Build with NestJS CLI
+RUN npx nest build
 
 # ============================================
 # Stage 3: Production Runtime
@@ -55,9 +55,9 @@ WORKDIR /app
 # Copy production dependencies
 COPY --from=dependencies /tmp/auth-service-deploy/node_modules ./node_modules
 
-# Copy Prisma client
+# Copy generated Prisma client to BOTH locations (pnpm structure)
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.pnpm/@prisma+client@6.19.0_prisma@6.19.0_typescript@5.9.3__typescript@5.9.3/node_modules/.prisma
 
 # Copy built application
 COPY --from=builder /app/apps/auth-service/dist ./dist
@@ -70,4 +70,4 @@ EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3001/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/apps/auth-service/src/main.js"]
