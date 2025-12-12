@@ -133,6 +133,8 @@ pipeline {
                 script {
                     echo "🏗️  Deploying infrastructure components..."
                     sh '''
+                        pwd
+                        ls -la | head -20
                         export KUBECONFIG=${KUBECONFIG}
                         
                         # Create namespace if not exists
