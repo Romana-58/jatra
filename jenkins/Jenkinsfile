@@ -165,6 +165,9 @@ pipeline {
                 script {
                     echo "🔌 Deploying PgBouncer connection pooler..."
                     sh '''
+                        pwd
+                        ls -la
+                        ls -la infra/ || echo "infra not found"
                         export KUBECONFIG=${KUBECONFIG}
                         kubectl apply -f infra/kubernetes/deployments/pgbouncer.yaml
                         
