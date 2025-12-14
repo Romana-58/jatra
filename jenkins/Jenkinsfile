@@ -110,17 +110,19 @@ pipeline {
             steps {
                 script {
                     echo "🔗 Checking Kubernetes cluster connectivity..."
-                    try {
-                        sh '''
+                    def clusterCheck = sh(
+                        script: '''
                             export KUBECONFIG=${KUBECONFIG}
-                            kubectl cluster-info
-                            kubectl get nodes
-                            echo "✅ Cluster is accessible"
-                        '''
+                            kubectl cluster-info && kubectl get nodes
+                        ''',
+                        returnStatus: true
+                    )
+                    
+                    if (clusterCheck == 0) {
+                        echo "✅ Cluster is accessible"
                         env.CLUSTER_AVAILABLE = 'true'
-                    } catch (Exception e) {
+                    } else {
                         echo "⚠️  Kubernetes cluster not accessible. Skipping deployment stages."
-                        echo "Error: ${e.getMessage()}"
                         env.CLUSTER_AVAILABLE = 'false'
                     }
                 }
