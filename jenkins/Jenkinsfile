@@ -23,9 +23,9 @@ pipeline {
             description: 'Deploy performance improvements (PgBouncer, HPA, Circuit Breaker)?'
         )
         booleanParam(
-            name: 'FORCE_DEPLOY',
+            name: 'SKIP_CLUSTER_CHECK',
             defaultValue: false,
-            description: 'Force deployment even if no changes detected?'
+            description: 'Skip cluster connectivity check (for development/testing)'
         )
     }
     
@@ -107,6 +107,9 @@ pipeline {
         }
         
         stage('Check Cluster Connectivity') {
+            when {
+                expression { !params.SKIP_CLUSTER_CHECK }
+            }
             steps {
                 script {
                     echo "🔗 Checking Kubernetes cluster connectivity..."
@@ -125,6 +128,18 @@ pipeline {
                         echo "⚠️  Kubernetes cluster not accessible. Skipping deployment stages."
                         env.CLUSTER_AVAILABLE = 'false'
                     }
+                }
+            }
+        }
+        
+        stage('Set Cluster Available for Testing') {
+            when {
+                expression { params.SKIP_CLUSTER_CHECK }
+            }
+            steps {
+                script {
+                    echo "🔧 Skipping cluster check for development/testing..."
+                    env.CLUSTER_AVAILABLE = 'true'
                 }
             }
         }
