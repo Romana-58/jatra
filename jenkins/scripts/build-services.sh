@@ -125,6 +125,39 @@ fi
 if [ -n "$FAILED_SERVICES" ]; then
     echo ""
     echo "=================================================="
+    echo "🔄 RETRYING FAILED BUILDS (attempt 2/2)"
+    echo "=================================================="
+    
+    RETRY_FAILED=""
+    for service in $FAILED_SERVICES; do
+        echo "   📦 $service - retrying build"
+        
+        BUILD_LOG="/tmp/build-$service.log"
+        echo "=== Retry started at $(date) ===" >> "$BUILD_LOG"
+        
+        if /usr/bin/docker build \
+            -f /workspace/apps/$service/Dockerfile \
+            -t jatra/$service:$IMAGE_TAG \
+            -t jatra/$service:latest \
+            /workspace >> "$BUILD_LOG" 2>&1; then
+            
+            echo "SUCCESS:$service" >> /tmp/build-results.txt
+            echo "   ✅ $service (retry successful)"
+            SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
+        else
+            RETRY_FAILED="$RETRY_FAILED $service"
+            echo "   ❌ $service (retry failed)"
+        fi
+    done
+    
+    # Update failed services list
+    FAILED_SERVICES="$RETRY_FAILED"
+fi
+
+# Final error reporting
+if [ -n "$FAILED_SERVICES" ]; then
+    echo ""
+    echo "=================================================="
     echo "❌ ERROR DETAILS"
     echo "=================================================="
     
