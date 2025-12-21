@@ -54,7 +54,7 @@ data:
     listen_backlog = 128
 
   userlist.txt: |
-    "jatra_user" "jatra_password"
+    "jatra_user" "jatra_password_change_in_prod"
 
 ---
 apiVersion: v1
