@@ -17,8 +17,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
 
 export default function HomePage() {
   const [fromStation, setFromStation] = useState("");
@@ -28,7 +26,62 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      {/* Header */}
+      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+        <div className="container mx-auto px-4 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-2">
+              <Train className="h-6 w-6 text-primary" />
+              <span className="text-xl font-semibold text-foreground">
+                Jatra Railway
+              </span>
+            </div>
+
+            <nav className="hidden md:flex items-center gap-8">
+              <a
+                href="#"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Book Tickets
+              </a>
+              <a
+                href="#"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Routes
+              </a>
+              <a
+                href="#"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Schedule
+              </a>
+              <a
+                href="#"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Support
+              </a>
+            </nav>
+
+            <div className="flex items-center gap-3">
+              <Link href="/login">
+                <Button
+                  variant="ghost"
+                  className="hidden md:inline-flex text-sm"
+                >
+                  Sign In
+                </Button>
+              </Link>
+              <Link href="/signup">
+                <Button className="text-sm bg-primary hover:bg-primary/90">
+                  Register
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </header>
 
       {/* Hero Section with Booking Form */}
       <section className="relative pt-20 pb-32 overflow-hidden">
@@ -392,7 +445,144 @@ export default function HomePage() {
         </div>
       </section>
 
-      <Footer />
+      {/* Footer */}
+      <footer className="border-t border-border bg-muted/30 py-12">
+        <div className="container mx-auto px-4 lg:px-8">
+          <div className="grid md:grid-cols-4 gap-8 mb-8">
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <Train className="h-5 w-5 text-primary" />
+                <span className="font-semibold">Jatra Railway</span>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Modern railway booking for Bangladesh. Fast, reliable, and
+                secure.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-4">Quick Links</h3>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <a
+                    href="#"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Book Tickets
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Train Schedule
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Routes
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    My Bookings
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-4">Support</h3>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <a
+                    href="#"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Help Center
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Contact Us
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Refund Policy
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    FAQs
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-4">Company</h3>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <a
+                    href="#"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    About Us
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Careers
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Privacy Policy
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Terms of Service
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="pt-8 border-t border-border text-center text-sm text-muted-foreground">
+            <p>
+              © 2025 Jatra Railway. All rights reserved. Powered by Bangladesh
+              Railway.
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

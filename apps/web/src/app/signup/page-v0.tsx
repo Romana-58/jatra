@@ -6,11 +6,11 @@ import { useState } from "react";
 import {
   Mail,
   Lock,
+  Train,
   UserIcon,
   Phone,
   CreditCard,
   ArrowRight,
-  Train,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -69,10 +69,10 @@ export default function SignupPage() {
 
       {/* Main Content */}
       <div className="flex-1 flex items-center justify-center p-4 py-12">
-        <div className="w-full max-w-md">
-          <div className="mb-6 text-center">
-            <h1 className="text-3xl font-bold mb-2">Create your account</h1>
-            <p className="text-base text-muted-foreground">
+        <div className="w-full max-w-2xl">
+          <div className="mb-8 text-center">
+            <h1 className="text-4xl font-bold mb-3">Create your account</h1>
+            <p className="text-lg text-muted-foreground">
               Join thousands of travelers on Jatra Railway
             </p>
           </div>
@@ -80,42 +80,47 @@ export default function SignupPage() {
           <Card className="border-2">
             <CardContent className="p-6 md:p-8">
               <form onSubmit={handleSubmit} className="space-y-5">
-                <div>
-                  <label className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
-                    <UserIcon className="h-4 w-4 text-primary" />
-                    Full Name
-                    <span className="text-destructive">*</span>
-                  </label>
-                  <Input
-                    type="text"
-                    placeholder="John Doe"
-                    value={formData.name}
-                    onChange={(e) => handleChange("name", e.target.value)}
-                    required
-                    className="h-11"
-                  />
+                {/* Name and Phone - Half width on larger screens */}
+                <div className="grid md:grid-cols-2 gap-5">
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+                      <UserIcon className="h-4 w-4 text-primary" />
+                      Full Name
+                      <span className="text-destructive">*</span>
+                    </label>
+                    <Input
+                      type="text"
+                      placeholder="John Doe"
+                      value={formData.name}
+                      onChange={(e) => handleChange("name", e.target.value)}
+                      required
+                      className="h-11"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-primary" />
+                      Phone Number
+                      <span className="text-destructive">*</span>
+                    </label>
+                    <Input
+                      type="tel"
+                      placeholder="01XXXXXXXXX"
+                      value={formData.phone}
+                      onChange={(e) => handleChange("phone", e.target.value)}
+                      required
+                      className="h-11"
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
-                    <Phone className="h-4 w-4 text-primary" />
-                    Phone Number
-                    <span className="text-destructive">*</span>
-                  </label>
-                  <Input
-                    type="tel"
-                    placeholder="01XXXXXXXXX"
-                    value={formData.phone}
-                    onChange={(e) => handleChange("phone", e.target.value)}
-                    required
-                    className="h-11"
-                  />
-                </div>
-
+                {/* Email - Full width */}
                 <div>
                   <label className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
                     <Mail className="h-4 w-4 text-primary" />
                     Email Address
+                    <span className="text-destructive">*</span>
                   </label>
                   <Input
                     type="email"
@@ -127,10 +132,11 @@ export default function SignupPage() {
                   />
                 </div>
 
+                {/* NID - Full width, optional */}
                 <div>
                   <label className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
                     <CreditCard className="h-4 w-4 text-primary" />
-                    NID
+                    NID (Optional)
                   </label>
                   <Input
                     type="text"
@@ -178,13 +184,26 @@ export default function SignupPage() {
                   </div>
                 </div>
 
-                <Button
-                  type="submit"
-                  className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-base"
-                >
-                  Create Account
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
+                <div className="pt-2">
+                  <Button
+                    type="submit"
+                    className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-base"
+                  >
+                    Create Account
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+
+                <p className="text-xs text-muted-foreground text-center leading-relaxed pt-2">
+                  By creating an account, you agree to our{" "}
+                  <Link href="#" className="text-primary hover:underline">
+                    Terms of Service
+                  </Link>{" "}
+                  and{" "}
+                  <Link href="#" className="text-primary hover:underline">
+                    Privacy Policy
+                  </Link>
+                </p>
               </form>
             </CardContent>
           </Card>

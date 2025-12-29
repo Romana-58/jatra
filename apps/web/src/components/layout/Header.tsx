@@ -19,13 +19,7 @@ export default function Header() {
               href="#"
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              Book Tickets
-            </a>
-            <a
-              href="#"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Routes
+              Search Trains
             </a>
             <a
               href="#"
@@ -37,7 +31,13 @@ export default function Header() {
               href="#"
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              Support
+              My Bookings
+            </a>
+            <a
+              href="#"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              My Tickets
             </a>
           </nav>
 
