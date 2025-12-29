@@ -4,38 +4,38 @@
   /* Railway Theme - Professional 3-Color Palette */
   --background: #ffffff;
   --foreground: #0f172a;
-  
+
   /* Primary: Railway Blue - Trust, reliability */
   --primary: #1e40af;
   --primary-foreground: #ffffff;
-  
+
   /* Secondary: Steel Gray - Modern, industrial */
   --secondary: #64748b;
   --secondary-foreground: #ffffff;
-  
+
   /* Accent: Safety Orange - Action, urgency */
   --accent: #f97316;
   --accent-foreground: #ffffff;
-  
+
   /* Semantic Colors */
   --success: #10b981;
   --warning: #f59e0b;
   --error: #ef4444;
   --info: #3b82f6;
-  
+
   /* UI Colors */
   --muted: #f1f5f9;
   --muted-foreground: #64748b;
   --border: #e2e8f0;
   --input: #e2e8f0;
   --ring: #1e40af;
-  
+
   /* Cards & Surfaces */
   --card: #ffffff;
   --card-foreground: #0f172a;
   --popover: #ffffff;
   --popover-foreground: #0f172a;
-  
+
   /* Radius */
   --radius: 0.5rem;
 }
@@ -70,22 +70,22 @@
   :root {
     --background: #0f172a;
     --foreground: #f1f5f9;
-    
+
     --primary: #3b82f6;
     --primary-foreground: #ffffff;
-    
+
     --secondary: #475569;
     --secondary-foreground: #f1f5f9;
-    
+
     --accent: #fb923c;
     --accent-foreground: #ffffff;
-    
+
     --muted: #1e293b;
     --muted-foreground: #94a3b8;
     --border: #334155;
     --input: #334155;
     --ring: #3b82f6;
-    
+
     --card: #1e293b;
     --card-foreground: #f1f5f9;
     --popover: #1e293b;

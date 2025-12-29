@@ -1,7 +1,12 @@
 import Link from "next/link";
 import { Train, Clock, Shield, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 
 export default function HomePage() {
   return (
@@ -19,14 +24,15 @@ export default function HomePage() {
         </div>
         <div className="flex gap-3">
           <Link href="/login">
-            <Button variant="outline" className="bg-white/10 text-white border-white/20 hover:bg-white/20">
+            <Button
+              variant="outline"
+              className="bg-white/10 text-white border-white/20 hover:bg-white/20"
+            >
               Sign In
             </Button>
           </Link>
           <Link href="/signup">
-            <Button variant="accent">
-              Get Started
-            </Button>
+            <Button variant="accent">Get Started</Button>
           </Link>
         </div>
       </header>
@@ -42,8 +48,8 @@ export default function HomePage() {
             </span>
           </h2>
           <p className="text-xl text-white/90 max-w-2xl mx-auto">
-            Experience hassle-free train booking with real-time seat availability,
-            instant confirmations, and secure payments
+            Experience hassle-free train booking with real-time seat
+            availability, instant confirmations, and secure payments
           </p>
           <div className="flex gap-4 justify-center pt-4">
             <Link href="/dashboard">
@@ -52,7 +58,11 @@ export default function HomePage() {
               </Button>
             </Link>
             <Link href="/signup">
-              <Button size="lg" variant="outline" className="bg-white text-[var(--primary)] hover:bg-white/90 text-lg px-8">
+              <Button
+                size="lg"
+                variant="outline"
+                className="bg-white text-[var(--primary)] hover:bg-white/90 text-lg px-8"
+              >
                 Create Account
               </Button>
             </Link>

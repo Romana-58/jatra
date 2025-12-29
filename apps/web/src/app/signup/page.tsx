@@ -10,23 +10,34 @@ import { Train, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import apiClient from "@/lib/axios-client";
 import { API_ENDPOINTS } from "@/lib/constants";
 import { useAuthStore } from "@/stores/auth-store";
 import { AuthResponse } from "@/types/auth";
 
-const signupSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Invalid email address"),
-  phone: z.string().regex(/^01[3-9]\d{8}$/, "Invalid Bangladesh phone number"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  confirmPassword: z.string(),
-  nid: z.string().optional(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
+const signupSchema = z
+  .object({
+    name: z.string().min(2, "Name must be at least 2 characters"),
+    email: z.string().email("Invalid email address"),
+    phone: z
+      .string()
+      .regex(/^01[3-9]\d{8}$/, "Invalid Bangladesh phone number"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+    confirmPassword: z.string(),
+    nid: z.string().optional(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
 
 type SignupFormData = z.infer<typeof signupSchema>;
 
@@ -57,7 +68,9 @@ export default function SignupPage() {
       setUser(response.data.user);
       router.push("/dashboard");
     } catch (err: any) {
-      setError(err.response?.data?.message || "Registration failed. Please try again.");
+      setError(
+        err.response?.data?.message || "Registration failed. Please try again."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -95,7 +108,9 @@ export default function SignupPage() {
                 className={errors.name ? "border-[var(--error)]" : ""}
               />
               {errors.name && (
-                <p className="text-sm text-[var(--error)]">{errors.name.message}</p>
+                <p className="text-sm text-[var(--error)]">
+                  {errors.name.message}
+                </p>
               )}
             </div>
 
@@ -109,7 +124,9 @@ export default function SignupPage() {
                 className={errors.email ? "border-[var(--error)]" : ""}
               />
               {errors.email && (
-                <p className="text-sm text-[var(--error)]">{errors.email.message}</p>
+                <p className="text-sm text-[var(--error)]">
+                  {errors.email.message}
+                </p>
               )}
             </div>
 
@@ -122,7 +139,9 @@ export default function SignupPage() {
                 className={errors.phone ? "border-[var(--error)]" : ""}
               />
               {errors.phone && (
-                <p className="text-sm text-[var(--error)]">{errors.phone.message}</p>
+                <p className="text-sm text-[var(--error)]">
+                  {errors.phone.message}
+                </p>
               )}
             </div>
 
@@ -145,7 +164,9 @@ export default function SignupPage() {
                 className={errors.password ? "border-[var(--error)]" : ""}
               />
               {errors.password && (
-                <p className="text-sm text-[var(--error)]">{errors.password.message}</p>
+                <p className="text-sm text-[var(--error)]">
+                  {errors.password.message}
+                </p>
               )}
             </div>
 
@@ -156,10 +177,14 @@ export default function SignupPage() {
                 type="password"
                 placeholder="Confirm your password"
                 {...register("confirmPassword")}
-                className={errors.confirmPassword ? "border-[var(--error)]" : ""}
+                className={
+                  errors.confirmPassword ? "border-[var(--error)]" : ""
+                }
               />
               {errors.confirmPassword && (
-                <p className="text-sm text-[var(--error)]">{errors.confirmPassword.message}</p>
+                <p className="text-sm text-[var(--error)]">
+                  {errors.confirmPassword.message}
+                </p>
               )}
             </div>
 

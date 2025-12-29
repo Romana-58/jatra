@@ -3,7 +3,13 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Train, Calendar, CreditCard, User } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -41,11 +47,17 @@ export default function DashboardPage() {
             <div className="w-10 h-10 bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] rounded-full flex items-center justify-center">
               <Train className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-xl font-bold text-[var(--primary)]">Jatra Railway</h1>
+            <h1 className="text-xl font-bold text-[var(--primary)]">
+              Jatra Railway
+            </h1>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-[var(--muted-foreground)]">Welcome, {user.name}</span>
-            <Button variant="outline" size="sm">Logout</Button>
+            <span className="text-sm text-[var(--muted-foreground)]">
+              Welcome, {user.name}
+            </span>
+            <Button variant="outline" size="sm">
+              Logout
+            </Button>
           </div>
         </div>
       </header>
@@ -100,7 +112,9 @@ export default function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>Your recent bookings and activities</CardDescription>
+            <CardDescription>
+              Your recent bookings and activities
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-[var(--muted-foreground)] text-center py-8">
