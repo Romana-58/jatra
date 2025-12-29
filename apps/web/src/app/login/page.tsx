@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Train, Loader2 } from "lucide-react";
+import { Train, Loader2, Shield, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +30,17 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
+const TEST_ACCOUNTS = {
+  ADMIN: {
+    email: "admin@jatra.com",
+    password: "admin123",
+  },
+  USER: {
+    email: "user@jatra.com",
+    password: "user123",
+  },
+};
+
 export default function LoginPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -39,10 +50,18 @@ export default function LoginPage() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   });
+
+  const fillTestCredentials = (role: "ADMIN" | "USER") => {
+    const credentials = TEST_ACCOUNTS[role];
+    setValue("emailOrPhone", credentials.email);
+    setValue("password", credentials.password);
+    setError("");
+  };
 
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
@@ -81,24 +100,36 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
-            {/* Test Credentials */}
-            <div className="bg-gradient-to-r from-blue-50 to-orange-50 border border-blue-200 rounded-md p-4 text-sm">
-              <p className="font-semibold text-gray-700 mb-2">
-                🧪 Test Credentials:
+            {/* Quick Login Options */}
+            <div className="bg-gradient-to-r from-blue-50 to-orange-50 border border-blue-200 rounded-md p-4">
+              <p className="font-semibold text-gray-700 mb-3 text-sm">
+                🧪 Quick Login:
               </p>
-              <div className="space-y-1 text-gray-600">
-                <div className="flex justify-between">
-                  <span>Admin:</span>
-                  <code className="bg-white px-2 py-0.5 rounded text-xs">
-                    admin@jatra.com / admin123
-                  </code>
-                </div>
-                <div className="flex justify-between">
-                  <span>User:</span>
-                  <code className="bg-white px-2 py-0.5 rounded text-xs">
-                    user@jatra.com / user123
-                  </code>
-                </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full h-auto py-3 flex flex-col items-center gap-2 hover:bg-blue-100 hover:border-blue-400 transition-all"
+                  onClick={() => fillTestCredentials("ADMIN")}
+                >
+                  <Shield className="w-5 h-5 text-blue-600" />
+                  <div className="text-center">
+                    <div className="font-semibold text-sm">Admin</div>
+                    <div className="text-xs text-gray-500">Full Access</div>
+                  </div>
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full h-auto py-3 flex flex-col items-center gap-2 hover:bg-orange-100 hover:border-orange-400 transition-all"
+                  onClick={() => fillTestCredentials("USER")}
+                >
+                  <User className="w-5 h-5 text-orange-600" />
+                  <div className="text-center">
+                    <div className="font-semibold text-sm">User</div>
+                    <div className="text-xs text-gray-500">Regular User</div>
+                  </div>
+                </Button>
               </div>
             </div>
 
