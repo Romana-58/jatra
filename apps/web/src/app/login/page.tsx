@@ -10,7 +10,14 @@ import { Train, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import apiClient from "@/lib/axios-client";
 import { API_ENDPOINTS } from "@/lib/constants";
 import { useAuthStore } from "@/stores/auth-store";
@@ -49,7 +56,9 @@ export default function LoginPage() {
       setUser(response.data.user);
       router.push("/dashboard");
     } catch (err: any) {
-      setError(err.response?.data?.message || "Login failed. Please try again.");
+      setError(
+        err.response?.data?.message || "Login failed. Please try again."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -74,15 +83,21 @@ export default function LoginPage() {
           <CardContent className="space-y-4">
             {/* Test Credentials */}
             <div className="bg-gradient-to-r from-blue-50 to-orange-50 border border-blue-200 rounded-md p-4 text-sm">
-              <p className="font-semibold text-gray-700 mb-2">🧪 Test Credentials:</p>
+              <p className="font-semibold text-gray-700 mb-2">
+                🧪 Test Credentials:
+              </p>
               <div className="space-y-1 text-gray-600">
                 <div className="flex justify-between">
                   <span>Admin:</span>
-                  <code className="bg-white px-2 py-0.5 rounded text-xs">admin@jatra.com / admin123</code>
+                  <code className="bg-white px-2 py-0.5 rounded text-xs">
+                    admin@jatra.com / admin123
+                  </code>
                 </div>
                 <div className="flex justify-between">
                   <span>User:</span>
-                  <code className="bg-white px-2 py-0.5 rounded text-xs">user@jatra.com / user123</code>
+                  <code className="bg-white px-2 py-0.5 rounded text-xs">
+                    user@jatra.com / user123
+                  </code>
                 </div>
               </div>
             </div>
@@ -102,7 +117,9 @@ export default function LoginPage() {
                 className={errors.emailOrPhone ? "border-[var(--error)]" : ""}
               />
               {errors.emailOrPhone && (
-                <p className="text-sm text-[var(--error)]">{errors.emailOrPhone.message}</p>
+                <p className="text-sm text-[var(--error)]">
+                  {errors.emailOrPhone.message}
+                </p>
               )}
             </div>
 
@@ -124,7 +141,9 @@ export default function LoginPage() {
                 className={errors.password ? "border-[var(--error)]" : ""}
               />
               {errors.password && (
-                <p className="text-sm text-[var(--error)]">{errors.password.message}</p>
+                <p className="text-sm text-[var(--error)]">
+                  {errors.password.message}
+                </p>
               )}
             </div>
 
