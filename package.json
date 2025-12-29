@@ -4,7 +4,9 @@
   "license": "MIT",
   "scripts": {
     "prisma:generate": "cd libs/database/prisma && npx prisma generate",
-    "db:seed": "ts-node libs/database/prisma/seed.ts"
+    "db:seed": "ts-node libs/database/prisma/seed.ts",
+    "dev:all": "pnpm -w -r --parallel run start:dev",
+    "start:all": "pnpm -w -r --parallel start"
   },
   "prisma": {
     "seed": "ts-node libs/database/prisma/seed.ts"
