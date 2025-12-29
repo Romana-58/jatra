@@ -6,18 +6,10 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Train, Loader2 } from "lucide-react";
+import { Train, Loader2, User, Mail, Phone, Lock, CreditCard, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import apiClient from "@/lib/axios-client";
 import { API_ENDPOINTS } from "@/lib/constants";
 import { useAuthStore } from "@/stores/auth-store";
@@ -77,148 +69,195 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[var(--primary)] via-[var(--secondary)] to-[var(--primary)] p-4">
-      <Card className="w-full max-w-md shadow-2xl">
-        <CardHeader className="space-y-3 text-center">
-          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] rounded-full flex items-center justify-center">
-            <Train className="w-10 h-10 text-white" />
-          </div>
-          <CardTitle className="text-3xl font-bold bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] bg-clip-text text-transparent">
-            Join Jatra Railway
-          </CardTitle>
-          <CardDescription className="text-base">
-            Create an account to start booking train tickets
-          </CardDescription>
-        </CardHeader>
+    <div className="min-h-screen flex flex-col lg:flex-row">
+      {/* Left Side - Matching Login Design */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-blue-800 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute top-20 left-20 w-72 h-72 bg-white rounded-full blur-3xl"></div>
+          <div className="absolute bottom-20 right-20 w-96 h-96 bg-white rounded-full blur-3xl"></div>
+        </div>
 
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <CardContent className="space-y-4">
+        <div className="relative z-10 flex flex-col justify-center px-12 py-16 text-white">
+          <div className="mb-8">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+                <Train className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold">Jatra Railway</h1>
+                <p className="text-white/80 text-sm">Join thousands of travelers</p>
+              </div>
+            </div>
+            
+            <h2 className="text-5xl font-bold mb-4 leading-tight">
+              Start Your Journey
+              <br />
+              <span className="text-orange-400">With Us Today</span>
+            </h2>
+            <p className="text-xl text-white/90">
+              Create your account in minutes and get instant access to book tickets nationwide.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Side - Signup Form */}
+      <div className="flex-1 flex items-center justify-center p-6 lg:p-12 bg-white">
+        <div className="w-full max-w-md">
+          <div className="lg:hidden flex items-center gap-3 mb-8">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center">
+              <Train className="w-7 h-7 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Jatra Railway</h1>
+              <p className="text-sm text-gray-600">Create Account</p>
+            </div>
+          </div>
+
+          <div className="mb-8">
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Create account</h2>
+            <p className="text-gray-600">Start booking your train tickets today</p>
+          </div>
+
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {error && (
-              <div className="bg-[var(--error)]/10 border border-[var(--error)] text-[var(--error)] px-4 py-3 rounded-md text-sm">
-                {error}
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm flex items-start gap-2">
+                <div className="w-5 h-5 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                </div>
+                <span>{error}</span>
               </div>
             )}
 
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input
-                id="name"
-                placeholder="Enter your full name"
-                {...register("name")}
-                className={errors.name ? "border-[var(--error)]" : ""}
-              />
-              {errors.name && (
-                <p className="text-sm text-[var(--error)]">
-                  {errors.name.message}
-                </p>
-              )}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-gray-700 font-medium">Full Name</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Input
+                    id="name"
+                    placeholder="John Doe"
+                    className={`pl-11 h-12 rounded-xl ${errors.name ? "border-red-500" : ""}`}
+                    {...register("name")}
+                  />
+                </div>
+                {errors.name && <p className="text-sm text-red-600">{errors.name.message}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone" className="text-gray-700 font-medium">Phone</Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Input
+                    id="phone"
+                    placeholder="01XXXXXXXXX"
+                    className={`pl-11 h-12 rounded-xl ${errors.phone ? "border-red-500" : ""}`}
+                    {...register("phone")}
+                  />
+                </div>
+                {errors.phone && <p className="text-sm text-red-600">{errors.phone.message}</p>}
+              </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="your.email@example.com"
-                {...register("email")}
-                className={errors.email ? "border-[var(--error)]" : ""}
-              />
-              {errors.email && (
-                <p className="text-sm text-[var(--error)]">
-                  {errors.email.message}
-                </p>
-              )}
+              <Label htmlFor="email" className="text-gray-700 font-medium">Email Address</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="your.email@example.com"
+                  className={`pl-11 h-12 rounded-xl ${errors.email ? "border-red-500" : ""}`}
+                  {...register("email")}
+                />
+              </div>
+              {errors.email && <p className="text-sm text-red-600">{errors.email.message}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
-              <Input
-                id="phone"
-                placeholder="01XXXXXXXXX"
-                {...register("phone")}
-                className={errors.phone ? "border-[var(--error)]" : ""}
-              />
-              {errors.phone && (
-                <p className="text-sm text-[var(--error)]">
-                  {errors.phone.message}
-                </p>
-              )}
+              <Label htmlFor="nid" className="text-gray-700 font-medium">NID (Optional)</Label>
+              <div className="relative">
+                <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Input
+                  id="nid"
+                  placeholder="National ID Number"
+                  className="pl-11 h-12 rounded-xl"
+                  {...register("nid")}
+                />
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="nid">NID (Optional)</Label>
-              <Input
-                id="nid"
-                placeholder="National ID Number"
-                {...register("nid")}
-              />
-            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-gray-700 font-medium">Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="••••••"
+                    className={`pl-11 h-12 rounded-xl ${errors.password ? "border-red-500" : ""}`}
+                    {...register("password")}
+                  />
+                </div>
+                {errors.password && <p className="text-sm text-red-600">{errors.password.message}</p>}
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Create a strong password"
-                {...register("password")}
-                className={errors.password ? "border-[var(--error)]" : ""}
-              />
-              {errors.password && (
-                <p className="text-sm text-[var(--error)]">
-                  {errors.password.message}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                placeholder="Confirm your password"
-                {...register("confirmPassword")}
-                className={
-                  errors.confirmPassword ? "border-[var(--error)]" : ""
-                }
-              />
-              {errors.confirmPassword && (
-                <p className="text-sm text-[var(--error)]">
-                  {errors.confirmPassword.message}
-                </p>
-              )}
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword" className="text-gray-700 font-medium">Confirm</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    placeholder="••••••"
+                    className={`pl-11 h-12 rounded-xl ${errors.confirmPassword ? "border-red-500" : ""}`}
+                    {...register("confirmPassword")}
+                  />
+                </div>
+                {errors.confirmPassword && <p className="text-sm text-red-600">{errors.confirmPassword.message}</p>}
+              </div>
             </div>
 
             <Button
               type="submit"
-              className="w-full"
-              variant="default"
-              size="lg"
+              className="w-full h-12 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold rounded-xl transition-all duration-300"
               disabled={isLoading}
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Creating account...
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>Creating account...</span>
                 </>
               ) : (
-                "Create Account"
+                <>
+                  <span>Create Account</span>
+                  <ArrowRight className="w-5 h-5" />
+                </>
               )}
             </Button>
-          </CardContent>
 
-          <CardFooter className="flex-col space-y-4">
-            <div className="text-center text-sm text-[var(--muted-foreground)]">
-              Already have an account?{" "}
-              <Link
-                href="/login"
-                className="text-[var(--primary)] hover:text-[var(--accent)] font-semibold transition-colors"
-              >
-                Sign in
-              </Link>
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-4 bg-white text-gray-500">Already have an account?</span>
+              </div>
             </div>
-          </CardFooter>
-        </form>
-      </Card>
+
+            <Link href="/login">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full h-12 border-2 border-gray-300 hover:border-blue-600 hover:bg-blue-50 hover:text-blue-600 rounded-xl font-semibold transition-all duration-300"
+              >
+                Sign in instead
+              </Button>
+            </Link>
+          </form>
+        </div>
+      </div>
     </div>
   );
 }
