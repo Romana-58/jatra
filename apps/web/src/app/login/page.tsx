@@ -72,6 +72,21 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
+            {/* Test Credentials */}
+            <div className="bg-gradient-to-r from-blue-50 to-orange-50 border border-blue-200 rounded-md p-4 text-sm">
+              <p className="font-semibold text-gray-700 mb-2">🧪 Test Credentials:</p>
+              <div className="space-y-1 text-gray-600">
+                <div className="flex justify-between">
+                  <span>Admin:</span>
+                  <code className="bg-white px-2 py-0.5 rounded text-xs">admin@jatra.com / admin123</code>
+                </div>
+                <div className="flex justify-between">
+                  <span>User:</span>
+                  <code className="bg-white px-2 py-0.5 rounded text-xs">user@jatra.com / user123</code>
+                </div>
+              </div>
+            </div>
+
             {error && (
               <div className="bg-[var(--error)]/10 border border-[var(--error)] text-[var(--error)] px-4 py-3 rounded-md text-sm">
                 {error}
