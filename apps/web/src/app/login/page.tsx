@@ -1,214 +1,188 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Train, Loader2, Shield, User } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import apiClient from "@/lib/axios-client";
-import { API_ENDPOINTS } from "@/lib/constants";
-import { useAuthStore } from "@/stores/auth-store";
-import { AuthResponse } from "@/types/auth";
+import type React from "react"
 
-const loginSchema = z.object({
-  emailOrPhone: z.string().min(1, "Email or phone is required"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-});
+import { useState } from "react"
+import { Mail, Lock, Train, Shield, UserIcon, ArrowRight } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Checkbox } from "@/components/ui/checkbox"
+import Link from "next/link"
 
-type LoginFormData = z.infer<typeof loginSchema>;
-
-const TEST_ACCOUNTS = {
-  ADMIN: {
+const testAccounts = [
+  {
+    role: "ADMIN",
     email: "admin@jatra.com",
     password: "admin123",
+    label: "Admin Access",
+    description: "Full system control",
+    icon: Shield,
+    color: "primary",
   },
-  USER: {
+  {
+    role: "USER",
     email: "user@jatra.com",
     password: "user123",
+    label: "User Account",
+    description: "Book & manage tickets",
+    icon: UserIcon,
+    color: "primary",
   },
-};
+]
 
 export default function LoginPage() {
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-  const setUser = useAuthStore((state) => state.setUser);
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [rememberMe, setRememberMe] = useState(false)
 
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    formState: { errors },
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
-  });
+  const handleTestAccountSelect = (account: (typeof testAccounts)[0]) => {
+    setEmail(account.email)
+    setPassword(account.password)
+  }
 
-  const fillTestCredentials = (role: "ADMIN" | "USER") => {
-    const credentials = TEST_ACCOUNTS[role];
-    setValue("emailOrPhone", credentials.email);
-    setValue("password", credentials.password);
-    setError("");
-  };
-
-  const onSubmit = async (data: LoginFormData) => {
-    setIsLoading(true);
-    setError("");
-
-    try {
-      const response = await apiClient.post<AuthResponse>(
-        API_ENDPOINTS.AUTH.LOGIN,
-        data
-      );
-      setUser(response.data.user);
-      router.push("/dashboard");
-    } catch (err: any) {
-      setError(
-        err.response?.data?.message || "Login failed. Please try again."
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    console.log("Login:", { email, password, rememberMe })
+  }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[var(--primary)] via-[var(--secondary)] to-[var(--primary)] p-4">
-      <Card className="w-full max-w-md shadow-2xl">
-        <CardHeader className="space-y-3 text-center">
-          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] rounded-full flex items-center justify-center">
-            <Train className="w-10 h-10 text-white" />
-          </div>
-          <CardTitle className="text-3xl font-bold bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] bg-clip-text text-transparent">
-            Welcome Back
-          </CardTitle>
-          <CardDescription className="text-base">
-            Sign in to book your next railway journey
-          </CardDescription>
-        </CardHeader>
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Header */}
+      <header className="border-b border-border bg-card/50 backdrop-blur-sm">
+        <div className="container mx-auto px-4 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <Link href="/" className="flex items-center gap-2">
+              <Train className="h-6 w-6 text-primary" />
+              <span className="text-xl font-semibold text-foreground">Jatra Railway</span>
+            </Link>
 
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <CardContent className="space-y-4">
-            {/* Quick Login Options */}
-            <div className="bg-gradient-to-r from-blue-50 to-orange-50 border border-blue-200 rounded-md p-4">
-              <p className="font-semibold text-gray-700 mb-3 text-sm">
-                🧪 Quick Login:
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full h-auto py-3 flex flex-col items-center gap-2 hover:bg-blue-100 hover:border-blue-400 transition-all"
-                  onClick={() => fillTestCredentials("ADMIN")}
-                >
-                  <Shield className="w-5 h-5 text-blue-600" />
-                  <div className="text-center">
-                    <div className="font-semibold text-sm">Admin</div>
-                    <div className="text-xs text-gray-500">Full Access</div>
-                  </div>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-muted-foreground hidden sm:inline">Don't have an account?</span>
+              <Link href="/signup">
+                <Button variant="outline" className="text-sm bg-transparent">
+                  Sign Up
                 </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full h-auto py-3 flex flex-col items-center gap-2 hover:bg-orange-100 hover:border-orange-400 transition-all"
-                  onClick={() => fillTestCredentials("USER")}
-                >
-                  <User className="w-5 h-5 text-orange-600" />
-                  <div className="text-center">
-                    <div className="font-semibold text-sm">User</div>
-                    <div className="text-xs text-gray-500">Regular User</div>
-                  </div>
-                </Button>
-              </div>
-            </div>
-
-            {error && (
-              <div className="bg-[var(--error)]/10 border border-[var(--error)] text-[var(--error)] px-4 py-3 rounded-md text-sm">
-                {error}
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="emailOrPhone">Email or Phone</Label>
-              <Input
-                id="emailOrPhone"
-                placeholder="Enter your email or phone number"
-                {...register("emailOrPhone")}
-                className={errors.emailOrPhone ? "border-[var(--error)]" : ""}
-              />
-              {errors.emailOrPhone && (
-                <p className="text-sm text-[var(--error)]">
-                  {errors.emailOrPhone.message}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-                <Link
-                  href="/forgot-password"
-                  className="text-sm text-[var(--primary)] hover:text-[var(--accent)] transition-colors"
-                >
-                  Forgot password?
-                </Link>
-              </div>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Enter your password"
-                {...register("password")}
-                className={errors.password ? "border-[var(--error)]" : ""}
-              />
-              {errors.password && (
-                <p className="text-sm text-[var(--error)]">
-                  {errors.password.message}
-                </p>
-              )}
-            </div>
-
-            <Button
-              type="submit"
-              className="w-full"
-              variant="default"
-              size="lg"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Signing in...
-                </>
-              ) : (
-                "Sign In"
-              )}
-            </Button>
-          </CardContent>
-
-          <CardFooter className="flex-col space-y-4">
-            <div className="text-center text-sm text-[var(--muted-foreground)]">
-              Don&apos;t have an account?{" "}
-              <Link
-                href="/signup"
-                className="text-[var(--primary)] hover:text-[var(--accent)] font-semibold transition-colors"
-              >
-                Create account
               </Link>
             </div>
-          </CardFooter>
-        </form>
-      </Card>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <div className="flex-1 flex items-center justify-center p-4 py-8">
+        <div className="w-full max-w-5xl grid lg:grid-cols-2 gap-6 items-start">
+          {/* Left Side - Login Form */}
+          <div className="w-full max-w-md mx-auto lg:mx-0">
+            <div className="mb-6">
+              <h1 className="text-3xl font-bold mb-2">Welcome back</h1>
+              <p className="text-base text-muted-foreground">Sign in to your Jatra Railway account</p>
+            </div>
+
+            <Card className="border-2">
+              <CardContent className="p-5">
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-1.5 flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-primary" />
+                      Email Address
+                    </label>
+                    <Input
+                      type="email"
+                      placeholder="your.email@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="h-10"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-1.5 flex items-center gap-2">
+                      <Lock className="h-4 w-4 text-primary" />
+                      Password
+                    </label>
+                    <Input
+                      type="password"
+                      placeholder="Enter your password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      className="h-10"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="remember"
+                        checked={rememberMe}
+                        onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                      />
+                      <label htmlFor="remember" className="text-sm text-muted-foreground cursor-pointer select-none">
+                        Remember me
+                      </label>
+                    </div>
+                    <Link href="#" className="text-sm text-primary hover:underline">
+                      Forgot password?
+                    </Link>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full h-10 bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
+                  >
+                    Sign In
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+
+            <p className="text-center text-sm text-muted-foreground mt-4">
+              Don't have an account?{" "}
+              <Link href="/signup" className="text-primary hover:underline font-medium">
+                Sign up for free
+              </Link>
+            </p>
+          </div>
+
+          {/* Right Side - Test Accounts */}
+          <div className="w-full max-w-md mx-auto lg:mx-0">
+            <Card className="border-2 border-primary/20 bg-muted/30">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Quick Test Login</CardTitle>
+                <CardDescription className="text-sm">Click to auto-fill credentials</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {testAccounts.map((account) => {
+                  const Icon = account.icon
+                  return (
+                    <Card
+                      key={account.role}
+                      className="cursor-pointer border hover:border-primary/50 hover:bg-accent/50 transition-all duration-200"
+                      onClick={() => handleTestAccountSelect(account)}
+                    >
+                      <CardContent className="p-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <Icon className="h-4 w-4 text-primary" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-sm text-foreground">{account.label}</div>
+                            <div className="text-xs text-muted-foreground/80 font-mono">{account.email}</div>
+                          </div>
+                          <ArrowRight className="h-4 w-4 text-muted-foreground/60 flex-shrink-0" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
     </div>
-  );
+  )
 }
